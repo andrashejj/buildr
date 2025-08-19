@@ -108,7 +108,6 @@ export const upsertUser = async (
     userData.email = primaryUserEmail;
     userData.name = clerkUserInfo.fullName;
     userData.picture = clerkUserInfo.imageUrl || null;
-    userData.isInternalUser = isInternalUser(userData.email);
 
     const user = await prisma.user.upsert({
       where: {
