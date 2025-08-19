@@ -1,0 +1,23 @@
+model User {
+    id             String   @id @default(uuid())
+    clerkUserId    String   @unique // Clerk's userId
+    isInternalUser Boolean  @default(false)
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+    lastLogin      DateTime @default(now())
+    email          String   @unique
+    name           String?
+    picture        String?
+
+    // Hash-based sync optimization
+    clerkDataHash String? // Hash of Clerk data to detect changes
+    lastFullSync  DateTime? // Track when last full sync happened
+
+    clerkUser ClerkUser?
+
+     // Settings
+    pushToken              String?
+
+
+    @@map("users")
+}

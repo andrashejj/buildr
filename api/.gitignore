@@ -1,0 +1,25 @@
+# Dependencies
+node_modules
+
+# Build
+dist
+build
+prisma/generated
+
+# Environment
+.env*
+!.env.example
+
+# Testing
+coverage
+.tap
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+
+*.db*
+db

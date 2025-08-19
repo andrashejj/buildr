@@ -1,0 +1,13 @@
+name: buildr-local
+services:
+  postgres-server:
+    image: ankane/pgvector:latest
+    ports:
+      - 5987:5432
+    environment:
+      - POSTGRES_PASSWORD=buildr
+      - POSTGRES_USER=buildr
+      - POSTGRES_DB=buildr
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db:/var/lib/postgresql/data

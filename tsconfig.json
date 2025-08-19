@@ -1,17 +1,11 @@
 {
-  "extends": "expo/tsconfig.base",
-  "compilerOptions": {
-    "strict": true,
-    "paths": {
-      "@/*": [
-        "./*"
-      ]
-    }
-  },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-  ]
+    "compilerOptions": {
+        "skipLibCheck": true,
+        "strict": true,
+        "forceConsistentCasingInFileNames": true
+    },
+    "references": [{ "path": "./api" }, { "path": "./ui" }],
+    "files": [],
+    "include": [],
+    "exclude": ["**/node_modules"]
 }

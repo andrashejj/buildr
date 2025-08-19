@@ -1,0 +1,29 @@
+model ClerkUser {
+    id                    String  @unique
+    userId                String  @unique // Clerk's userId
+    user                  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    passwordEnabled       Boolean
+    totpEnabled           Boolean
+    backupCodeEnabled     Boolean
+    twoFactorEnabled      Boolean
+    banned                Boolean
+    createdAt             String
+    updatedAt             String
+    lastSignInAt          String?
+    lastActiveAt          String?
+    legalAcceptedAt       String? // nullable
+    externalId            String? @unique // Clerk's externalId
+    username              String?
+    firstName             String?
+    lastName              String?
+    imageUrl              String?
+    hasImage              Boolean
+    primaryEmailAddressId String?
+    primaryPhoneNumberId  String?
+    primaryWeb3WalletId   String?
+    emailAddresses        Json[] // storing arrays as JSON
+    phoneNumbers          Json[]
+    web3Wallets           Json[]
+
+    @@map("clerk_users")
+}

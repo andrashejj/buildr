@@ -1,0 +1,27 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Version control
+.git
+.github
+
+# Editor directories and files
+.vscode
+.idea
+
+# Documentation
+*.md
+!README.md
+
+# Environment files
+.env*
+!.env.example
+
+# Build artifacts
+dist
+.turbo
+
+# Local development
+.tap
+memory.db
