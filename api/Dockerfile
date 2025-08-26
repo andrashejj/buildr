@@ -6,7 +6,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 
 # Install required dependencies and global packages
 RUN npm install -g pnpm && \
-    npm install -g ts-node
+    npm install -g tsx
 
 WORKDIR /app/api
 
@@ -16,4 +16,4 @@ RUN pnpm i
 
 EXPOSE 4000
 
-CMD ["ts-node", "--transpile-only", "server.ts"]
+CMD ["tsx", "server.ts"]
