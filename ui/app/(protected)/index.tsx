@@ -4,11 +4,11 @@ import { Text } from '@/components/ui/text';
 import { UserMenu } from '@/components/user-menu';
 import { useUser } from '@clerk/clerk-expo';
 import { Link, Stack } from 'expo-router';
-import { MoonStarIcon, SunIcon, XIcon } from 'lucide-react-native';
+import { MoonStarIcon, SunIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
-import { Image, type ImageStyle, View } from 'react-native';
-import { AppTRPCProvider } from '../utils/trpc';
+import { type ImageStyle, View } from 'react-native';
+import { AppTRPCProvider } from '../../utils/trpc';
 
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -37,34 +37,29 @@ const SCREEN_OPTIONS = {
 // query client and trpc provider are provided by `AppTRPCProvider`
 
 function Screen() {
-  const { colorScheme } = useColorScheme();
   const { user } = useUser();
 
   return (
     <>
       <Stack.Screen options={SCREEN_OPTIONS} />
-      <View className="flex-1 items-center justify-center gap-8 p-4">
-        <View className="flex-row items-center justify-center gap-3.5">
-          <Image
-            source={CLERK_LOGO[colorScheme ?? 'light']}
-            resizeMode="contain"
-            style={LOGO_STYLE}
-          />
-          <Icon as={XIcon} className="mr-1 size-5" />
-          <Image source={LOGO[colorScheme ?? 'light']} style={LOGO_STYLE} resizeMode="contain" />
-        </View>
-        <View className="max-w-sm gap-2 px-4">
-          <Text variant="h1" className="text-3xl font-medium">
-            Make it yours{user?.firstName ? `, ${user.firstName}` : ''}...
+      <View className="flex-1 items-center justify-center gap-8 bg-gradient-to-br from-primary to-secondary p-4">
+        <View className="max-w-sm gap-4 px-4">
+          <Text className="text-center text-4xl font-bold text-foreground dark:text-primary-foreground">
+            Welcome to Buildr
           </Text>
-          <Text className="ios:text-foreground text-center font-mono text-sm text-muted-foreground">
-            Update the screens and components to match your design and logic.
+          <Text className="text-center text-lg text-foreground/90 dark:text-primary-foreground/90">
+            Realize your home project dreams with ease.
+          </Text>
+          <Text className="text-center text-base text-foreground/80 dark:text-primary-foreground/80">
+            From precise room measurements to creating ideal layouts, selecting perfect furniture,
+            and guiding you through the building process – we've got you covered every step of the
+            way.
           </Text>
         </View>
         <View className="gap-2">
-          <Link href="https://go.clerk.com/8e6CCee" asChild>
-            <Button size="sm">
-              <Text>Explore Clerk Docs</Text>
+          <Link href="/capture" asChild>
+            <Button size="lg" className="bg-primary">
+              <Text className="font-semibold text-primary-foreground">Get Started</Text>
             </Button>
           </Link>
         </View>

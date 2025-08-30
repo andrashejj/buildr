@@ -1,5 +1,5 @@
 {
-  "name": "my-test-app",
+  "name": "buildr",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -19,9 +19,9 @@
     "@rn-primitives/separator": "^1.2.0",
     "@rn-primitives/slot": "^1.2.0",
     "@tanstack/react-query": "^5.85.5",
-    "@trpc/client": "^11.4.4",
+    "@trpc/client": "^11.5.0",
     "@trpc/react-query": "^11.5.0",
-    "@trpc/server": "^11.4.4",
+    "@trpc/server": "^11.5.0",
     "@trpc/tanstack-react-query": "^11.5.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
@@ -56,9 +56,5 @@
     "prettier-plugin-tailwindcss": "^0.6.14",
     "typescript": "~5.8.3"
   },
-  "resolutions": {
-    "lightningcss": "1.27.0"
-  },
-  "private": true,
-  "packageManager": "pnpm@10.15.0+sha512.486ebc259d3e999a4e8691ce03b5cac4a71cbeca39372a9b762cb500cfdf0873e2cb16abe3d951b1ee2cf012503f027b98b6584e4df22524e0c7450d9ec7aa7b"
+  "private": true
 }
