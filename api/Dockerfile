@@ -14,6 +14,6 @@ COPY . .
 
 RUN pnpm i
 
-EXPOSE 4000
+EXPOSE 4001
 
 CMD ["tsx", "server.ts"]
