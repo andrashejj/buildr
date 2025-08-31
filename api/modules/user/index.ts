@@ -21,15 +21,13 @@ const shouldPerformFullSync = (
     lastFullSync: Date | null;
   } | null,
   clerkDataHash: string,
-  forceSync = false,
+  forceSync = false
 ): boolean => {
   if (forceSync || !existingUser) return true;
 
   // Check if hash changed (data changed)
   if (existingUser.clerkDataHash !== clerkDataHash) {
-    console.log(
-      `🔄 Clerk data changed for user ${existingUser.clerkUserId} (hash mismatch)`,
-    );
+    console.log(`🔄 Clerk data changed for user ${existingUser.clerkUserId} (hash mismatch)`);
     return true;
   }
 
@@ -38,9 +36,7 @@ const shouldPerformFullSync = (
   if (existingUser.lastFullSync) {
     const timeSinceSync = Date.now() - existingUser.lastFullSync.getTime();
     if (timeSinceSync > FORCE_SYNC_INTERVAL) {
-      console.log(
-        `🕒 Force sync due to time interval for user ${existingUser.clerkUserId}`,
-      );
+      console.log(`🕒 Force sync due to time interval for user ${existingUser.clerkUserId}`);
       return true;
     }
   }
@@ -48,13 +44,10 @@ const shouldPerformFullSync = (
   return false;
 };
 
-export const upsertUser = async (
-  clerkUserInfo: ClerkUserType,
-): Promise<User | null> => {
+export const upsertUser = async (clerkUserInfo: ClerkUserType): Promise<User | null> => {
   try {
     const upsertData = getClerkUpsertData(clerkUserInfo);
-    const { createdAt, lastActiveAt, updatedAt, lastSignInAt, ...hashData } =
-      upsertData;
+    const { createdAt, lastActiveAt, updatedAt, lastSignInAt, ...hashData } = upsertData;
 
     const clerkDataHash = generateHash(JSON.stringify({ ...hashData }));
 
@@ -83,7 +76,7 @@ export const upsertUser = async (
     }
 
     console.log(
-      `🔄 Full sync needed for user ${clerkUserInfo.id} (${!existingUser ? 'new user' : 'data changed'})`,
+      `🔄 Full sync needed for user ${clerkUserInfo.id} (${!existingUser ? 'new user' : 'data changed'})`
     );
 
     // Prepare user data for full sync
@@ -91,14 +84,13 @@ export const upsertUser = async (
       email: '',
       name: null as string | null,
       picture: null as string | null,
-      isInternalUser: false,
       lastLogin: new Date(),
       clerkDataHash,
       lastFullSync: new Date(),
     };
 
     const primaryUserEmail = clerkUserInfo.emailAddresses.find(
-      (email) => email.id === clerkUserInfo.primaryEmailAddressId,
+      (email) => email.id === clerkUserInfo.primaryEmailAddressId
     )?.emailAddress;
 
     if (!primaryUserEmail) {
@@ -146,9 +138,7 @@ export const upsertUser = async (
   }
 };
 
-export const getUserByClerkId = async (
-  clerkId: string,
-): Promise<User | null> => {
+export const getUserByClerkId = async (clerkId: string): Promise<User | null> => {
   try {
     const user = await prisma.user.findUniqueOrThrow({
       where: {
@@ -232,9 +222,7 @@ const getClerkUpsertData = (clerkUserInfo: ClerkUserType) => {
     primaryEmailAddressId: clerkUserInfo.primaryEmailAddressId,
     primaryPhoneNumberId: clerkUserInfo.primaryPhoneNumberId,
     primaryWeb3WalletId: clerkUserInfo.primaryWeb3WalletId,
-    emailAddresses: clerkUserInfo.emailAddresses.map(
-      (email) => email.emailAddress,
-    ),
+    emailAddresses: clerkUserInfo.emailAddresses.map((email) => email.emailAddress),
     phoneNumbers: clerkUserInfo.phoneNumbers.map((phone) => phone.phoneNumber),
     web3Wallets: clerkUserInfo.web3Wallets.map((wallet) => wallet.web3Wallet),
   };
