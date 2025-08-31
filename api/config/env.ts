@@ -43,14 +43,15 @@ const secrets = {
     SECRET_KEY: process.env.CLERK_SECRET_KEY,
   },
 
+  // EMAIL / RESEND
+  RESEND_SECRET_KEY: process.env.RESEND_SECRET_KEY,
+
   // SEARCH TOOLS
   EXA_API_KEY: process.env.EXA_API_KEY,
 };
 
 function getAppEnv() {
-  const NODE_ENV = z
-    .enum(['development', 'staging', 'production'])
-    .parse(process.env.NODE_ENV);
+  const NODE_ENV = z.enum(['development', 'staging', 'production']).parse(process.env.NODE_ENV);
 
   return {
     ...lodash.merge(require(`./envs/${NODE_ENV}`).default, secrets),
@@ -63,7 +64,7 @@ const parsed = appEnvSchema.safeParse(getAppEnv());
 if (!parsed.success) {
   console.error(
     '❌ Invalid environment variables:',
-    JSON.stringify(parsed.error.format(), null, 2),
+    JSON.stringify(parsed.error.format(), null, 2)
   );
   process.exit(1);
 }
