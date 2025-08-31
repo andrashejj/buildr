@@ -12,8 +12,8 @@ export const appEnvSchema = z.object({
   // DATABASE
   POSTGRES_PRISMA_URL: z.string(),
 
-  // // SENTRY
-  // SENTRY_DSN: z.string(),
+  // SENTRY
+  SENTRY_DSN: z.string(),
 
   // AI Stuff
   OPENAI_API_KEY: z.string(),
