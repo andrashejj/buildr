@@ -5,11 +5,7 @@ import { ScrollView, View } from 'react-native';
 import { useTRPC } from '../../utils/trpc';
 
 export default function SignInScreen() {
-  const trpc = useTRPC();
-  const healthQuery = useQuery(trpc.health.server.queryOptions());
-
-  console.log('🚀 ~ SignInScreen ~ healthQuery:', healthQuery.data);
-
+  
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"

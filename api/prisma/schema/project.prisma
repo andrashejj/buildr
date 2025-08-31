@@ -1,0 +1,14 @@
+model Project {
+    id          String   @id @default(uuid())
+    name        String
+    startDate   DateTime
+    endDate     DateTime?
+    size        String?  // e.g., "small", "medium", "large"
+    type        String   // e.g., "renovation", "paint job", etc.
+    userId      String
+    user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@map("projects")
+}

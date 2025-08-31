@@ -1,5 +1,5 @@
 {
-  "name": "my-test-app",
+  "name": "buildr",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.14.14",
+    "@hookform/resolvers": "^5.2.1",
+    "@react-native-community/datetimepicker": "8.4.1",
     "@react-navigation/native": "^7.0.0",
     "@rn-primitives/avatar": "^1.2.0",
     "@rn-primitives/label": "^1.2.0",
@@ -19,12 +21,13 @@
     "@rn-primitives/separator": "^1.2.0",
     "@rn-primitives/slot": "^1.2.0",
     "@tanstack/react-query": "^5.85.5",
-    "@trpc/client": "^11.4.4",
+    "@trpc/client": "^11.5.0",
     "@trpc/react-query": "^11.5.0",
-    "@trpc/server": "^11.4.4",
+    "@trpc/server": "^11.5.0",
     "@trpc/tanstack-react-query": "^11.5.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "date-fns": "^4.1.0",
     "expo": "^53.0.22",
     "expo-auth-session": "~6.2.1",
     "expo-linking": "~7.1.7",
@@ -38,7 +41,11 @@
     "nativewind": "^4.1.23",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "react-hook-form": "^7.62.0",
     "react-native": "0.79.5",
+    "react-native-actions-sheet": "^0.9.7",
+    "react-native-gesture-handler": "~2.24.0",
+    "react-native-modal-datetime-picker": "^18.0.0",
     "react-native-reanimated": "~3.17.5",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
@@ -47,7 +54,8 @@
     "tailwind-merge": "^2.2.1",
     "tailwindcss": "^3.4.14",
     "tailwindcss-animate": "^1.0.7",
-    "trpc-zustand": "^1.1.1"
+    "trpc-zustand": "^1.1.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
@@ -56,9 +64,5 @@
     "prettier-plugin-tailwindcss": "^0.6.14",
     "typescript": "~5.8.3"
   },
-  "resolutions": {
-    "lightningcss": "1.27.0"
-  },
-  "private": true,
-  "packageManager": "pnpm@10.15.0+sha512.486ebc259d3e999a4e8691ce03b5cac4a71cbeca39372a9b762cb500cfdf0873e2cb16abe3d951b1ee2cf012503f027b98b6584e4df22524e0c7450d9ec7aa7b"
+  "private": true
 }

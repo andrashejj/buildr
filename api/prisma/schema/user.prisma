@@ -1,7 +1,6 @@
 model User {
     id             String   @id @default(uuid())
     clerkUserId    String   @unique // Clerk's userId
-    isInternalUser Boolean  @default(false)
     createdAt      DateTime @default(now())
     updatedAt      DateTime @updatedAt
     lastLogin      DateTime @default(now())
@@ -18,6 +17,7 @@ model User {
      // Settings
     pushToken              String?
 
+    projects Project[]
 
     @@map("users")
 }

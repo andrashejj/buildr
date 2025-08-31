@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useSSO, type StartSSOFlowParams } from '@clerk/clerk-expo';
 import * as AuthSession from 'expo-auth-session';
-import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
@@ -12,7 +11,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 type SocialConnectionStrategy = Extract<
   StartSSOFlowParams['strategy'],
-  'oauth_google' | 'oauth_github' | 'oauth_apple'
+  'oauth_google' | 'oauth_apple'
 >;
 
 const SOCIAL_CONNECTION_STRATEGIES: {
@@ -29,11 +28,6 @@ const SOCIAL_CONNECTION_STRATEGIES: {
     type: 'oauth_google',
     source: { uri: 'https://img.clerk.com/static/google.png?width=160' },
     useTint: false,
-  },
-  {
-    type: 'oauth_github',
-    source: { uri: 'https://img.clerk.com/static/github.png?width=160' },
-    useTint: true,
   },
 ];
 

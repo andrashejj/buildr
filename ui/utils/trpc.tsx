@@ -1,3 +1,4 @@
+import { useAuth } from '@clerk/clerk-expo';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
@@ -26,12 +27,19 @@ export function getQueryClient() {
 
 export function AppTRPCProvider({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
+  const { getToken } = useAuth();
   const [trpcClient] = useState(() =>
     createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
           url: 'http://localhost:4001/api',
           transformer: superjson,
+          headers: async () => {
+            const token = await getToken();
+            return {
+              authorization: `Bearer ${token}`,
+            };
+          },
         }),
       ],
     })

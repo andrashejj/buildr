@@ -4,13 +4,13 @@ import { NAV_THEME } from '@/lib/theme';
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import { ThemeProvider } from '@react-navigation/native';
-import { AppTRPCProvider } from '../utils/trpc';
 import { PortalHost } from '@rn-primitives/portal';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
+import { AppTRPCProvider } from '../utils/trpc';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -49,22 +49,29 @@ function Routes() {
   }
 
   return (
-    <Stack>
-      {/* Screens only shown when the user is NOT signed in */}
-      <Stack.Protected guard={!isSignedIn}>
-        <Stack.Screen name="(auth)/sign-in" options={SIGN_IN_SCREEN_OPTIONS} />
-        <Stack.Screen name="(auth)/sign-up" options={SIGN_UP_SCREEN_OPTIONS} />
-        <Stack.Screen name="(auth)/reset-password" options={DEFAULT_AUTH_SCREEN_OPTIONS} />
-        <Stack.Screen name="(auth)/forgot-password" options={DEFAULT_AUTH_SCREEN_OPTIONS} />
-      </Stack.Protected>
+    <AppTRPCProvider>
+      <Stack>
+        {/* Screens only shown when the user is NOT signed in */}
+        <Stack.Protected guard={!isSignedIn}>
+          <Stack.Screen name="(auth)/sign-in" options={SIGN_IN_SCREEN_OPTIONS} />
+          <Stack.Screen name="(auth)/sign-up" options={SIGN_UP_SCREEN_OPTIONS} />
+          <Stack.Screen name="(auth)/reset-password" options={DEFAULT_AUTH_SCREEN_OPTIONS} />
+          <Stack.Screen name="(auth)/forgot-password" options={DEFAULT_AUTH_SCREEN_OPTIONS} />
+        </Stack.Protected>
 
-      {/* Screens only shown when the user IS signed in */}
-      <Stack.Protected guard={isSignedIn}>
-        <Stack.Screen name="index" />
-      </Stack.Protected>
+        {/* Screens only shown when the user IS signed in */}
+        <Stack.Protected guard={isSignedIn}>
+          <Stack.Screen name="(protected)/index" options={PROTECTED_SCREEN_OPTIONS} />
+          <Stack.Screen name="(protected)/about" options={PROTECTED_SCREEN_OPTIONS} />
+          <Stack.Screen name="(protected)/create-project" options={CREATE_PROJECT_SCREEN_OPTIONS} />
+          <Stack.Screen name="(protected)/projects/[id]" options={CREATE_PROJECT_SCREEN_OPTIONS} />
+        </Stack.Protected>
 
-      {/* Screens outside the guards are accessible to everyone (e.g. not found) */}
-    </Stack>
+        {/* Screens outside the guards are accessible to everyone (e.g. not found) */}
+
+        <Stack.Screen name="(landing)/landing" options={{ headerShown: false }} />
+      </Stack>
+    </AppTRPCProvider>
   );
 }
 
@@ -84,4 +91,13 @@ const DEFAULT_AUTH_SCREEN_OPTIONS = {
   title: '',
   headerShadowVisible: false,
   headerTransparent: true,
+};
+
+const PROTECTED_SCREEN_OPTIONS = {
+  headerShown: false,
+};
+
+const CREATE_PROJECT_SCREEN_OPTIONS = {
+  headerShown: true,
+  title: 'Project Details',
 };
