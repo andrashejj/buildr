@@ -31,7 +31,6 @@ const sentryMiddleware = t.middleware(
 // middleware to check if user is authenticated
 const isAuthed = t.middleware(async ({ next, ctx }) => {
   const user = await verifyRequestAuth(ctx.req);
-
   if (!user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }

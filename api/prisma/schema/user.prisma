@@ -17,7 +17,20 @@ model User {
      // Settings
     pushToken              String?
 
+    // role/type of user: homeowner or contractor
+    userType UserType? @default(HOME_OWNER)
+
     projects Project[]
+
+    // Relations for messaging
+    sentMessages     Message[] @relation("sentMessages")
+    receivedMessages Message[] @relation("receivedMessages")
+
+    // Offers submitted by this user when they are contractors
+    offers Offer[]
+
+    // Media uploaded by this user
+    media Media[]
 
     @@map("users")
 }

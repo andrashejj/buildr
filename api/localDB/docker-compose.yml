@@ -9,5 +9,4 @@ services:
       - POSTGRES_USER=buildr
       - POSTGRES_DB=buildr
     volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./db:/var/lib/postgresql/data

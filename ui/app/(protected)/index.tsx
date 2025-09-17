@@ -35,15 +35,6 @@ const LOGO_STYLE: ImageStyle = {
   width: 40,
 };
 
-const SCREEN_OPTIONS = {
-  header: () => (
-    <View className="top-safe absolute left-0 right-0 flex-row justify-between px-4 py-2 web:mx-2">
-      <ThemeToggle />
-      <UserMenu />
-    </View>
-  ),
-};
-
 export default function WelcomePage() {
   const { colorScheme } = useColorScheme();
   const { user } = useUser();
@@ -74,7 +65,7 @@ export default function WelcomePage() {
             Hi {user?.firstName || 'there'}, welcome to buildr, the place to realize your dreams.
           </Text>
           <Text className="ios:text-foreground text-center font-mono text-sm text-muted-foreground">
-            Let's build something amazing together.
+            Let us build something amazing together.
           </Text>
         </View>
         <View className="gap-2">
@@ -101,7 +92,8 @@ export default function WelcomePage() {
                     typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
                   if (!(d instanceof Date) || isNaN(d.getTime())) return String(date);
                   return format(d, 'yyyy-MM-dd');
-                } catch (e) {
+                } catch (e: unknown) {
+                  console.error('Error formatting date', e);
                   return String(date);
                 }
               };

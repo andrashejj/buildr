@@ -1,0 +1,23 @@
+// A Room represents a specific room in a project (e.g., kitchen, bedroom) and can have
+// multiple media items (images/videos) attached.
+model Room {
+  id          String    @id @default(uuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name        String
+  type        RoomType?
+  width       Float?
+  length      Float?
+  area        Float?    // optional, can be calculated client-side if needed
+  floorType   String?
+  description String?
+
+  media       Media[]
+  messages    Message[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("rooms")
+}

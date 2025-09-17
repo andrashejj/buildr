@@ -1,10 +1,15 @@
-import { CreateProjectForm } from '@/components/create-project-form';
+import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { View } from 'react-native';
 
 export default function CreateProjectPage() {
-  return (
-    <View className="flex-1 p-4">
-      <CreateProjectForm />
-    </View>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to the first step
+    router.replace({ pathname: '/create-project/step-0' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return <View className="flex-1 p-4" />;
 }

@@ -1,0 +1,43 @@
+enum UserType {
+  HOME_OWNER
+  CONTRACTOR
+}
+
+enum ProjectType {
+  RENOVATION
+  PAINTING
+  ELECTRICAL
+  PLUMBING
+  OTHER
+}
+
+enum ProjectSize {
+  SMALL
+  MEDIUM
+  LARGE
+  EXTRA_LARGE
+}
+
+enum RoomType {
+  KITCHEN
+  BATHROOM
+  BEDROOM
+  LIVING_ROOM
+  DINING_ROOM
+  GARAGE
+  BASEMENT
+  ATTIC
+  OTHER
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}

@@ -44,7 +44,7 @@ export default function LandingPage() {
 
           {/* Personas */}
           <View className="mb-6">
-            <Text className="mb-3 text-xl font-semibold text-foreground">Who it's for</Text>
+            <Text className="mb-3 text-xl font-semibold text-foreground">Who it is for</Text>
             <View className="mb-3">
               <Text className="text-base font-medium text-foreground">Homeowners</Text>
               <Text className="text-sm text-muted-foreground">

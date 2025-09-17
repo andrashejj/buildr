@@ -1,0 +1,22 @@
+// Offers are proposals from contractors for a given project. Multiple contractors can
+// submit offers which are then compared/accepted by the project owner.
+model Offer {
+  id           String   @id @default(uuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contractorId String
+  contractor   User     @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+
+  amountCents  Int
+  currency     String   @default("USD")
+  description  String?
+  status       OfferStatus @default(PENDING)
+
+  media        Media[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  expiresAt    DateTime?
+
+  @@map("offers")
+}

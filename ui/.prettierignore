@@ -1,0 +1,20 @@
+# Ignore macOS files
+.DS_Store
+
+# Node
+node_modules
+
+# Expo / React Native build artifacts
+.expo
+android
+ios
+
+
+# Xcode derived data
+DerivedData
+
+# Generated files
+**/generated/**
+
+# Misc
+*.lock

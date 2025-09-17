@@ -1,0 +1,32 @@
+// Messages exchanged between users (home owners and contractors). Messages can be tied
+// to a project or optionally a specific room. Attachments are modeled via MessageAttachment.
+model Message {
+  id          String    @id @default(uuid())
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  roomId      String?
+  room        Room?     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  senderId    String
+  sender      User      @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User      @relation("receivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  body        String?
+  createdAt   DateTime  @default(now())
+  readAt      DateTime?
+
+  attachments MessageAttachment[]
+
+  @@map("messages")
+}
+
+model MessageAttachment {
+  id        String  @id @default(uuid())
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  mediaId   String
+  media     Media   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@map("message_attachments")
+}
