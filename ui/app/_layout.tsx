@@ -15,8 +15,10 @@ import { AppTRPCProvider } from '../utils/trpc';
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
 
+  console.log('logging process env', process.env);
+
   return (
-    <ClerkProvider publishableKey={env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
       <AppTRPCProvider>
         <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
           <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />

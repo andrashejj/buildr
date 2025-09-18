@@ -1,4 +1,3 @@
-import { env } from '@/utils/env';
 import { useAuth } from '@clerk/clerk-expo';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
@@ -34,7 +33,7 @@ export function AppTRPCProvider({ children }: { children: React.ReactNode }) {
     createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
-          url: env.EXPO_PUBLIC_API_ENDPOINT,
+          url: process.env.NEXT_PUBLIC_API_ENDPOINT!,
           transformer: superjson,
           headers: async () => {
             const token = await getToken();
