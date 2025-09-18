@@ -1,7 +1,6 @@
 import '@/global.css';
 
 import { NAV_THEME } from '@/lib/theme';
-import { env } from '@/utils/env';
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
@@ -18,7 +17,11 @@ export default function RootLayout() {
   console.log('logging process env', process.env);
 
   return (
-    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+    <ClerkProvider
+      publishableKey={
+        process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ??
+        'pk_test_Z3JhbmQtZ2Vja28tNS5jbGVyay5hY2NvdW50cy5kZXYk'
+      }>
       <AppTRPCProvider>
         <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
           <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />

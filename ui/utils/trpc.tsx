@@ -33,7 +33,7 @@ export function AppTRPCProvider({ children }: { children: React.ReactNode }) {
     createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
-          url: process.env.NEXT_PUBLIC_API_ENDPOINT!,
+          url: process.env.EXPO_PUBLIC_API_ENDPOINT ?? 'https://buildr.fly.dev/api',
           transformer: superjson,
           headers: async () => {
             const token = await getToken();
