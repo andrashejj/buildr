@@ -7,6 +7,7 @@ model Room {
 
   name        String
   type        RoomType?
+  expectations String?
   width       Float?
   length      Float?
   area        Float?    // optional, can be calculated client-side if needed

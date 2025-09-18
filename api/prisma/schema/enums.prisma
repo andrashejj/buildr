@@ -30,6 +30,11 @@ enum RoomType {
   OTHER
 }
 
+enum EndDateType {
+  FLEXIBLE
+  EXACT
+}
+
 enum MediaType {
   IMAGE
   VIDEO

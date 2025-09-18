@@ -1,69 +1,116 @@
+import env from '@/config/env';
 import { createMedia, getMediaByProject } from '@/modules/media';
 import { createMessage, getMessagesForProject } from '@/modules/message';
 import { createOffer, getOffersForProject, updateOfferStatus } from '@/modules/offer';
 import { createProject, getProjectById, getProjectsByUser } from '@/modules/project';
 import { createRoom, getRoomsByProject } from '@/modules/room';
+import { Prisma } from '@/prisma/generated';
 import {
+  EndDateTypeSchema,
   MediaCreateInputSchema,
+  MediaTypeSchema,
   MessageCreateInputSchema,
   OfferCreateInputSchema,
   OfferUpdateInputSchema,
   OfferWhereUniqueInputSchema,
+  ProjectTypeSchema,
   RoomCreateInputSchema,
+  RoomTypeSchema,
 } from '@/prisma/generated/zod';
+import { put } from '@vercel/blob';
 import { z } from 'zod';
 import { protectedProcedure, router } from '..';
 
 export const projectRouter = router({
-  // Client-friendly create: accept simple scalars/arrays and map to Prisma nested creates
   createProject: protectedProcedure
     .input(
-      z
-        .object({
-          name: z.string(),
-          startDate: z.string(),
-          endDate: z.string().nullable().optional(),
-          size: z.string().optional().nullable(),
-          type: z.string(),
-          // client may send simple enum array or detailed room objects
-          rooms: z.array(z.string()).optional(),
-          roomsDetails: z
-            .array(
-              z.object({
-                room: z.string(),
-                expectations: z.string().optional(),
-                images: z.array(z.any()).optional(),
-              })
-            )
-            .optional(),
-          images: z.array(z.any()).optional(),
-        })
-        .passthrough()
+      z.object({
+        name: z.string(),
+        startDate: z.coerce.date(),
+        endDate: z.coerce.date().optional().nullable(),
+        endDateType: z
+          .lazy(() => EndDateTypeSchema)
+          .optional()
+          .nullable(),
+        type: z.lazy(() => ProjectTypeSchema),
+        rooms: z.array(RoomTypeSchema).optional(),
+        roomsDetails: z
+          .array(
+            z.object({
+              room: RoomTypeSchema,
+              expectations: z.string().optional(),
+              images: z
+                .array(
+                  z.object({
+                    uri: z.string().min(1),
+                    mediaType: MediaTypeSchema,
+                  })
+                )
+                .optional(),
+            })
+          )
+          .optional(),
+        images: z
+          .array(
+            z.object({
+              uri: z.string().min(1),
+              mediaType: MediaTypeSchema,
+            })
+          )
+          .optional(),
+      })
     )
     .mutation(async ({ ctx, input }) => {
-      const { roomsDetails, images, size, rooms, startDate, endDate, ...rest } = input;
+      const { roomsDetails, images, rooms, startDate, endDate, endDateType, ...rest } = input;
+      console.log('Creating project with data:', input);
 
-      const data: any = {
+      const data: Prisma.ProjectCreateInput = {
         ...rest,
-        startDate: startDate ? new Date(startDate) : undefined,
+        startDate: new Date(startDate),
         endDate: endDate ? new Date(endDate) : null,
+        endDateType,
         user: { connect: { id: ctx.user.id } },
+        rooms: undefined,
+        media: undefined,
       };
 
       // Prefer detailed room objects when provided
-      if (roomsDetails && Array.isArray(roomsDetails) && roomsDetails.length > 0) {
+      if (roomsDetails && roomsDetails.length > 0) {
         data.rooms = {
-          create: roomsDetails.map((r: any) => ({ room: r.room, expectations: r.expectations })),
+          create: roomsDetails.map((roomDetail) => ({
+            type: roomDetail.room,
+            name: roomDetail.room.toLowerCase().replace('_', ' '),
+            expectations: roomDetail.expectations,
+            media: roomDetail.images
+              ? {
+                  create: roomDetail.images.map((image) => ({
+                    url: image.uri,
+                    type: image.mediaType,
+                    uploadedBy: { connect: { id: ctx.user.id } },
+                  })),
+                }
+              : undefined,
+          })),
         };
-      } else if (rooms && Array.isArray(rooms) && rooms.length > 0) {
-        data.rooms = { create: rooms.map((r: string) => ({ room: r })) };
+      } else if (rooms && rooms.length > 0) {
+        data.rooms = {
+          create: rooms.map((roomType) => ({
+            type: roomType,
+            name: roomType.toLowerCase().replace('_', ' '),
+          })),
+        };
       }
 
-      if (images && Array.isArray(images) && images.length > 0) {
-        data.media = { create: images };
+      // Handle project-level media
+      if (images && images.length > 0) {
+        data.media = {
+          create: images.map((image) => ({
+            url: image.uri,
+            type: image.mediaType,
+            uploadedBy: { connect: { id: ctx.user.id } },
+          })),
+        };
       }
-
-      if (size && typeof size === 'string') data.size = size.toUpperCase();
 
       return await createProject({ data });
     }),
@@ -94,6 +141,32 @@ export const projectRouter = router({
     .input(MediaCreateInputSchema)
     .mutation(async ({ input }) => {
       return await createMedia({ data: input });
+    }),
+
+  uploadMediaToProject: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string().optional(),
+        roomId: z.string().optional(),
+        fileName: z.string(),
+        fileData: z.string(), // base64
+        mediaType: MediaTypeSchema,
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { fileName, fileData, mediaType } = input;
+
+      // Convert base64 to buffer
+      const buffer = Buffer.from(fileData, 'base64');
+
+      // Upload to Vercel Blob
+      const blob = await put(fileName, buffer, {
+        access: 'public',
+        token: env.BLOB_READ_WRITE_TOKEN,
+        addRandomSuffix: true,
+      });
+
+      return { url: blob.url, mediaType };
     }),
 
   getMediaByProject: protectedProcedure

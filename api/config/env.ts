@@ -19,6 +19,9 @@ export const appEnvSchema = z.object({
   OPENAI_API_KEY: z.string(),
   OPENROUTER_API_KEY: z.string(),
 
+  // VERCEL BLOB
+  BLOB_READ_WRITE_TOKEN: z.string(),
+
   NODE_ENV: z.string(),
 
   // AUTH
@@ -48,6 +51,9 @@ const secrets = {
 
   // SEARCH TOOLS
   EXA_API_KEY: process.env.EXA_API_KEY,
+
+  // VERCEL BLOB
+  BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
 };
 
 function getAppEnv() {

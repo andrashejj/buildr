@@ -6,7 +6,18 @@ export const createProject = async ({ data }: { data: Prisma.ProjectCreateInput 
 };
 
 export const getProjectsByUser = async ({ userId }: { userId: string }) => {
-  return prisma.project.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } });
+  return await prisma.project.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      rooms: {
+        include: {
+          media: true,
+        },
+      },
+      media: true,
+    },
+  });
 };
 
 export const getProjectById = async ({ id, userId }: { id: string; userId: string }) => {
@@ -14,7 +25,11 @@ export const getProjectById = async ({ id, userId }: { id: string; userId: strin
     where: { id },
     include: {
       media: true,
-      rooms: true,
+      rooms: {
+        include: {
+          media: true,
+        },
+      },
       messages: {
         where: {
           OR: [{ senderId: userId }, { recipientId: userId }],
@@ -29,7 +44,11 @@ export const getAllProjects = async () => {
   return prisma.project.findMany({
     include: {
       media: true,
-      rooms: true,
+      rooms: {
+        include: {
+          media: true,
+        },
+      },
     },
   });
 };

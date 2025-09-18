@@ -3,6 +3,7 @@ model Project {
     name      String
     startDate DateTime
     endDate   DateTime?
+    endDateType EndDateType?
     size      ProjectSize?
     type      ProjectType
     userId    String

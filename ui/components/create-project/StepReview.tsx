@@ -33,10 +33,7 @@ export default function StepReview({ values }: Props) {
         <Text className="font-semibold">Rooms</Text>
         <Text>{(values.rooms || []).join(', ')}</Text>
       </View>
-      <View className="py-2">
-        <Text className="font-semibold">Size</Text>
-        <Text>{values.size || '—'}</Text>
-      </View>
+
       <View className="flex-row flex-wrap py-2">
         {(values.images || []).map((asset: MediaAsset) =>
           asset.mediaType === 'image' ? (

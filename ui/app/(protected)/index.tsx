@@ -81,52 +81,49 @@ export default function WelcomePage() {
           </Link>
         </View>
 
-        {/* Projects list (show as cards when available) */}
-        {projects.data && projects.data.length > 0 && (
-          <ScrollView contentContainerStyle={{ paddingVertical: 12 }} className="w-full px-4">
-            {projects.data.map((project) => {
-              const safeDate = (date?: string | Date | number | null): string => {
-                if (!date) return '';
-                try {
-                  const d =
-                    typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
-                  if (!(d instanceof Date) || isNaN(d.getTime())) return String(date);
-                  return format(d, 'yyyy-MM-dd');
-                } catch (e: unknown) {
-                  console.error('Error formatting date', e);
-                  return String(date);
-                }
-              };
+        <ScrollView contentContainerStyle={{ paddingVertical: 12 }} className="w-full px-4">
+          {projects.data?.map((project) => {
+            const safeDate = (date?: string | Date | number | null): string => {
+              if (!date) return '';
+              try {
+                const d =
+                  typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+                if (!(d instanceof Date) || isNaN(d.getTime())) return String(date);
+                return format(d, 'yyyy-MM-dd');
+              } catch (e: unknown) {
+                console.error('Error formatting date', e);
+                return String(date);
+              }
+            };
 
-              const startStr = safeDate(project.startDate);
-              const endStr = project.endDate ? safeDate(project.endDate) : '';
+            const startStr = safeDate(project.startDate);
+            const endStr = project.endDate ? safeDate(project.endDate) : '';
 
-              return (
-                <Card key={project.id} className="mb-4 w-full max-w-sm">
-                  <CardHeader className="flex-row">
-                    <View className="flex-1 gap-1.5">
-                      <CardTitle>{project.name}</CardTitle>
-                      <CardDescription>
-                        {project.type} • {project.size ?? 'unspecified'}
-                      </CardDescription>
-                    </View>
-                  </CardHeader>
-                  <CardContent>
-                    <Text className="text-sm text-muted-foreground">
-                      {startStr}
-                      {endStr ? ` — ${endStr}` : ''}
-                    </Text>
-                  </CardContent>
-                  <CardFooter className="flex-row">
-                    <Button size="sm" onPress={() => router.push(`/projects/${project.id}`)}>
-                      <Text>Open</Text>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              );
-            })}
-          </ScrollView>
-        )}
+            return (
+              <Card key={project.id} className="mb-4 w-full max-w-sm">
+                <CardHeader className="flex-row">
+                  <View className="flex-1 gap-1.5">
+                    <CardTitle>{project.name}</CardTitle>
+                    <CardDescription>
+                      {project.type} • {project.size ?? 'unspecified'}
+                    </CardDescription>
+                  </View>
+                </CardHeader>
+                <CardContent>
+                  <Text className="text-sm text-muted-foreground">
+                    {startStr}
+                    {endStr ? ` — ${endStr}` : ''}
+                  </Text>
+                </CardContent>
+                <CardFooter className="flex-row">
+                  <Button size="sm" onPress={() => router.push(`/projects/${project.id}`)}>
+                    <Text>Open</Text>
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
+        </ScrollView>
       </View>
     </ScrollView>
   );

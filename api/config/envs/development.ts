@@ -11,4 +11,7 @@ export default {
   CLERK: {
     PUBLISHABLE_KEY: 'pk_test_Z3JhbmQtZ2Vja28tNS5jbGVyay5hY2NvdW50cy5kZXYk',
   },
+
+  // VERCEL BLOB
+  BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN || '',
 };

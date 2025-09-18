@@ -44,21 +44,21 @@ function Routes() {
   }
 
   return (
-    <Stack>
+    <Stack screenOptions={{ headerShown: false }}>
       {/* Screens only shown when the user is NOT signed in */}
       <Stack.Protected guard={!isSignedIn}>
-        <Stack.Screen name="(auth)/sign-in" options={SIGN_IN_SCREEN_OPTIONS} />
-        <Stack.Screen name="(auth)/sign-up" options={SIGN_UP_SCREEN_OPTIONS} />
-        <Stack.Screen name="(auth)/reset-password" options={DEFAULT_AUTH_SCREEN_OPTIONS} />
-        <Stack.Screen name="(auth)/forgot-password" options={DEFAULT_AUTH_SCREEN_OPTIONS} />
+        <Stack.Screen name="(auth)/sign-in" />
+        <Stack.Screen name="(auth)/sign-up" />
+        <Stack.Screen name="(auth)/reset-password" />
+        <Stack.Screen name="(auth)/forgot-password" />
       </Stack.Protected>
 
       {/* Screens only shown when the user IS signed in */}
       <Stack.Protected guard={isSignedIn}>
-        <Stack.Screen name="(protected)/index" options={PROTECTED_SCREEN_OPTIONS} />
-        <Stack.Screen name="(protected)/about" options={PROTECTED_SCREEN_OPTIONS} />
-        <Stack.Screen name="(protected)/create-project" options={CREATE_PROJECT_SCREEN_OPTIONS} />
-        <Stack.Screen name="(protected)/projects/[id]" options={CREATE_PROJECT_SCREEN_OPTIONS} />
+        <Stack.Screen name="(protected)/index" />
+        <Stack.Screen name="(protected)/about" />
+        <Stack.Screen name="(protected)/create-project" />
+        <Stack.Screen name="(protected)/projects/[id]" />
       </Stack.Protected>
 
       {/* Screens outside the guards are accessible to everyone (e.g. not found) */}
@@ -67,29 +67,3 @@ function Routes() {
     </Stack>
   );
 }
-
-const SIGN_IN_SCREEN_OPTIONS = {
-  headerShown: false,
-  title: 'Sign in',
-};
-
-const SIGN_UP_SCREEN_OPTIONS = {
-  presentation: 'modal',
-  title: '',
-  headerTransparent: true,
-  gestureEnabled: false,
-} as const;
-
-const DEFAULT_AUTH_SCREEN_OPTIONS = {
-  title: '',
-  headerShadowVisible: false,
-  headerTransparent: true,
-};
-
-const PROTECTED_SCREEN_OPTIONS = {
-  headerShown: false,
-};
-
-const CREATE_PROJECT_SCREEN_OPTIONS = {
-  headerShown: false,
-};

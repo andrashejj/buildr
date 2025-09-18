@@ -12,7 +12,8 @@
     "lint": "eslint --max-warnings=0 .",
     "lint:fix": "eslint . --fix",
     "prettier": "prettier --write '**/*.{js,ts,tsx,json,md,css}'",
-    "prettier:check": "prettier --check '**/*.{js,ts,tsx,json,md,css}'"
+    "prettier:check": "prettier --check '**/*.{js,ts,tsx,json,md,css}'",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.14.14",
@@ -20,6 +21,7 @@
     "@hookform/resolvers": "^5.2.1",
     "@react-native-community/datetimepicker": "8.4.1",
     "@react-navigation/native": "^7.0.0",
+    "@redux-devtools/extension": "^3.3.0",
     "@rn-primitives/avatar": "^1.2.0",
     "@rn-primitives/label": "^1.2.0",
     "@rn-primitives/popover": "^1.2.0",
@@ -36,6 +38,7 @@
     "date-fns": "^4.1.0",
     "expo": "^53.0.22",
     "expo-auth-session": "~6.2.1",
+    "expo-image": "^3.0.8",
     "expo-image-picker": "^16.1.4",
     "expo-linking": "~7.1.7",
     "expo-router": "~5.1.5",
@@ -43,6 +46,7 @@
     "expo-splash-screen": "~0.30.10",
     "expo-status-bar": "~2.2.3",
     "expo-system-ui": "~5.0.11",
+    "expo-video": "^3.0.11",
     "expo-web-browser": "~14.2.0",
     "lucide-react-native": "^0.511.0",
     "nativewind": "^4.1.23",

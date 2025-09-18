@@ -7,7 +7,7 @@ export default function CreateProjectPage() {
 
   useEffect(() => {
     // Redirect to the first step
-    router.replace({ pathname: '/create-project/step-0' });
+    router.replace({ pathname: '/create-project/step-1' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

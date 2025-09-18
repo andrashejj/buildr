@@ -3,8 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
 import { Control, FieldErrors, useController } from 'react-hook-form';
 import { Alert, Image, TouchableOpacity, View } from 'react-native';
-import OptionCard from './OptionCard';
-import { FormValues, MediaAsset, PROJECT_SIZES, ProjectSize } from './schema';
+import { FormValues, MediaAsset } from './schema';
 
 type Props = {
   control: Control<any>;
@@ -37,7 +36,6 @@ async function pickMedia(): Promise<MediaAsset[]> {
 }
 
 export default function StepSizePhotos({ control }: Props) {
-  const { field: sizeField } = useController<FormValues, 'size'>({ name: 'size', control });
   const { field: imagesField } = useController<FormValues, 'images'>({ name: 'images', control });
 
   const handlePickProjectImages = async () => {
@@ -46,24 +44,10 @@ export default function StepSizePhotos({ control }: Props) {
     imagesField.onChange([...(imagesField.value ?? []), ...assets]);
   };
 
-  const selectedSize: ProjectSize | undefined = sizeField.value;
   const selectedImages: MediaAsset[] = imagesField.value ?? [];
 
   return (
     <>
-      <Text className="mb-2">Size (Optional)</Text>
-      <View className="flex-row gap-2">
-        {PROJECT_SIZES.map((size) => (
-          <OptionCard
-            key={size}
-            label={size ?? ''}
-            icon={size === 'small' ? '⚪' : size === 'medium' ? '🟡' : '🔴'}
-            selected={selectedSize === size}
-            onPress={() => sizeField.onChange(size)}
-          />
-        ))}
-      </View>
-
       <Text className="mb-2 mt-4">Photos (Optional)</Text>
       <TouchableOpacity
         onPress={handlePickProjectImages}
