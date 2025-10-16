@@ -15,8 +15,7 @@ const logger = {
     options: {
       translateTime: 'HH:MM:ss Z',
       ignore: 'pid,hostname',
-      messageFormat:
-        '{msg} [method={req.method} url={req.url} duration={responseTime}ms]',
+      messageFormat: '{msg} [method={req.method} url={req.url} duration={responseTime}ms]',
     },
   },
 };
@@ -51,12 +50,7 @@ server.register(helmet, {
   contentSecurityPolicy: {
     directives: {
       frameAncestors: ["'self'", env.ENDPOINT.APP],
-      scriptSrc: [
-        "'self'",
-        "'unsafe-inline'",
-        "'unsafe-eval'",
-        'https://cdn.tailwindcss.com',
-      ],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://cdn.tailwindcss.com'],
       mediaSrc: ["'self'"],
       imgSrc: ["'self'"],
     },

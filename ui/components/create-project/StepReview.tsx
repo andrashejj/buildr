@@ -1,7 +1,7 @@
 import { Text } from '@/components/ui/text';
 import React from 'react';
 import { Image, View } from 'react-native';
-import { FormValues, MediaAsset } from './schema';
+import { FormValues } from './schema';
 
 type Props = {
   values: Partial<FormValues>;
@@ -35,8 +35,8 @@ export default function StepReview({ values }: Props) {
       </View>
 
       <View className="flex-row flex-wrap py-2">
-        {(values.images || []).map((asset: MediaAsset) =>
-          asset.mediaType === 'image' ? (
+        {(values.images || []).map((asset) =>
+          asset.mediaType === 'IMAGE' ? (
             <Image
               key={asset.uri}
               source={{ uri: asset.uri }}

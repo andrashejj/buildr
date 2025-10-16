@@ -79,6 +79,11 @@ export default function WelcomePage() {
               <Text>Create Project</Text>
             </Button>
           </Link>
+          <Link href="/ai" asChild>
+            <Button size="sm">
+              <Text>Talk to buildr</Text>
+            </Button>
+          </Link>
         </View>
 
         <ScrollView contentContainerStyle={{ paddingVertical: 12 }} className="w-full px-4">
@@ -103,7 +108,7 @@ export default function WelcomePage() {
               <Card key={project.id} className="mb-4 w-full max-w-sm">
                 <CardHeader className="flex-row">
                   <View className="flex-1 gap-1.5">
-                    <CardTitle>{project.name}</CardTitle>
+                    <CardTitle>{project.summary}</CardTitle>
                     <CardDescription>
                       {project.type} • {project.size ?? 'unspecified'}
                     </CardDescription>

@@ -1,9 +1,13 @@
 model Project {
     id        String      @id @default(uuid())
-    name      String
+    summary   String
     startDate DateTime
     endDate   DateTime?
     endDateType EndDateType?
+
+    budgetMin Float?
+    budgetMax Float? 
+    
     size      ProjectSize?
     type      ProjectType
     userId    String

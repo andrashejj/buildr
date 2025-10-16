@@ -9,6 +9,6 @@ export default {
   SENTRY_DSN: '',
 
   CLERK: {
-    PUBLISHABLE_KEY: 'pk_test_Z3JhbmQtZ2Vja28tNS5jbGVyay5hY2NvdW50cy5kZXYk',
+    PUBLISHABLE_KEY: 'pk_test_cmVzb2x2ZWQtdGljay03OC5jbGVyay5hY2NvdW50cy5kZXYk',
   },
 };

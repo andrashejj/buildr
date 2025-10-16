@@ -1,6 +1,7 @@
 import { useAuth } from '@clerk/clerk-expo';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import React, { useState } from 'react';
 import superjson from 'superjson';
@@ -33,7 +34,9 @@ export function AppTRPCProvider({ children }: { children: React.ReactNode }) {
     createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
-          url: process.env.EXPO_PUBLIC_API_ENDPOINT ?? 'https://buildr.fly.dev/api',
+          url: process.env.EXPO_PUBLIC_API_ENDPOINT
+            ? `${process.env.EXPO_PUBLIC_API_ENDPOINT}/api`
+            : 'https://buildr.fly.dev/api',
           transformer: superjson,
           headers: async () => {
             const token = await getToken();
@@ -56,3 +59,7 @@ export function AppTRPCProvider({ children }: { children: React.ReactNode }) {
 }
 
 export default AppTRPCProvider;
+
+// Types
+export type RouterInputs = inferRouterInputs<AppRouter>;
+export type RouterOutputs = inferRouterOutputs<AppRouter>;

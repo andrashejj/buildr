@@ -1,11 +1,11 @@
 {
-    "compilerOptions": {
-        "skipLibCheck": true,
-        "strict": true,
-        "forceConsistentCasingInFileNames": true
-    },
-    "references": [{ "path": "./api" }, { "path": "./ui" }],
-    "files": [],
-    "include": [],
-    "exclude": ["**/node_modules"]
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "references": [{ "path": "./api" }, { "path": "./ui" }, { "path": "./livekit" }],
+  "files": [],
+  "include": [],
+  "exclude": ["**/node_modules"]
 }

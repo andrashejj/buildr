@@ -4,14 +4,11 @@ import { clerkPlugin } from '@clerk/fastify';
 import { FastifyPluginCallback } from 'fastify';
 import { FastifyReply } from 'fastify/types/reply';
 import { FastifyRequest } from 'fastify/types/request';
+import { protectedRoutes as uploadRoutes } from './upload';
 
-const addUserToRequest = async (
-  request: FastifyRequest,
-  reply: FastifyReply,
-) => {
+const addUserToRequest = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    if (!request.headers.authorization)
-      throw new Error('No Authorization header found');
+    if (!request.headers.authorization) throw new Error('No Authorization header found');
 
     const user = await verifyRequestAuth(request);
 
@@ -26,17 +23,17 @@ const addUserToRequest = async (
 };
 
 //all protected routes
-export const protectedRoutes: FastifyPluginCallback = (
-  instance,
-  opts,
-  done,
-) => {
+export const protectedRoutes: FastifyPluginCallback = (instance, opts, done) => {
   instance.register(clerkPlugin, {
     secretKey: env.CLERK.SECRET_KEY,
     publishableKey: env.CLERK.PUBLISHABLE_KEY,
+    jwtKey: env.CLERK.JWT_KEY,
   });
 
   instance.addHook('preHandler', addUserToRequest);
+
+  instance.register(uploadRoutes, { prefix: '/upload' });
+
   done();
 };
 

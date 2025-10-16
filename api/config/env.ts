@@ -22,16 +22,33 @@ export const appEnvSchema = z.object({
   // VERCEL BLOB
   BLOB_READ_WRITE_TOKEN: z.string(),
 
+  // TIGRIS Object Storage
+  TIGRIS: z.object({
+    AWS_ACCESS_KEY_ID: z.string(),
+    AWS_ENDPOINT_URL_S3: z.string(),
+    AWS_REGION: z.string(),
+    AWS_SECRET_ACCESS_KEY: z.string(),
+    BUCKET_NAME: z.string(),
+  }),
+
   NODE_ENV: z.string(),
 
   // AUTH
   CLERK: z.object({
     PUBLISHABLE_KEY: z.string(),
     SECRET_KEY: z.string(),
+    JWT_KEY: z.string(),
   }),
 
   // SEARCH TOOLS
   EXA_API_KEY: z.string(),
+
+  // LIVEKIT
+  LIVEKIT: z.object({
+    API_KEY: z.string(),
+    API_SECRET: z.string(),
+    URL: z.string(),
+  }),
 });
 
 const secrets = {
@@ -54,6 +71,22 @@ const secrets = {
 
   // VERCEL BLOB
   BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
+
+  // TIGRIS Object Storage
+  TIGRIS: {
+    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+    AWS_ENDPOINT_URL_S3: process.env.AWS_ENDPOINT_URL_S3,
+    AWS_REGION: process.env.AWS_REGION,
+    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+    BUCKET_NAME: process.env.BUCKET_NAME,
+  },
+
+  // LIVEKIT
+  LIVEKIT: {
+    API_KEY: process.env.LIVEKIT_API_KEY,
+    API_SECRET: process.env.LIVEKIT_API_SECRET,
+    URL: process.env.LIVEKIT_URL,
+  },
 };
 
 function getAppEnv() {

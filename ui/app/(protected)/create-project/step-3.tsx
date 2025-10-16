@@ -1,3 +1,5 @@
+'use client';
+
 import { ROOM_OPTIONS, step3Schema, Step3Values } from '@/components/create-project/schema';
 import { Button } from '@/components/ui/button';
 import { DateField } from '@/components/ui/date-field';
@@ -13,9 +15,10 @@ import { ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function Step3() {
   const router = useRouter();
-  const trpc = useTRPC();
 
-  const uploadMediaToProject = useMutation(trpc.project.uploadMediaToProject.mutationOptions());
+  const createPresignedUrlMutation = useMutation(
+    useTRPC().project.createPresignedUrl.mutationOptions()
+  );
 
   const step2 = useCreateProjectFormStore((s) => s.step2);
   const step3 = useCreateProjectFormStore((s) => s.step3);
@@ -45,7 +48,6 @@ export default function Step3() {
       startDate: step3?.startDate ?? '',
       endDate: step3?.endDate ?? '',
       endDateType: step3?.endDateType ?? undefined,
-      images: step3?.images ?? [],
     },
   });
 
@@ -62,7 +64,6 @@ export default function Step3() {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
       quality: 1,
-      base64: true,
     });
 
     if (!result.canceled) {
@@ -70,7 +71,6 @@ export default function Step3() {
       const newMedia = result.assets.map((asset) => ({
         uri: asset.uri,
         mediaType: (asset.type?.toUpperCase() === 'VIDEO' ? 'VIDEO' : 'IMAGE') as 'IMAGE' | 'VIDEO',
-        base64: asset.base64!,
         fileName: asset.fileName || `file_${Date.now()}`,
       }));
       setValue(`roomsDetails.${roomIndex}.media`, [...currentMedia, ...newMedia]);
@@ -79,24 +79,38 @@ export default function Step3() {
 
   const onSubmit = async (data: Step3Values) => {
     try {
-      console.log('Starting form submission with data:', data);
-
       // Upload media
       const uploadedRoomsDetails = await Promise.all(
         data.roomsDetails?.map(async (roomDetail) => {
           const uploadedMedia = await Promise.all(
             roomDetail.media?.map(async (media) => {
-              console.log('Uploading media:', media.fileName);
-              const result = await uploadMediaToProject.mutateAsync({
-                fileName: media.fileName!,
-                fileData: media.base64!,
-                mediaType: media.mediaType,
+              const mediaResponse = await fetch(media.uri);
+              const blob = await mediaResponse.blob();
+              const file = new File([blob], media.fileName!, {
+                type: media.mediaType === 'VIDEO' ? 'video/*' : 'image/*',
               });
+              const { presignedUrl } = await createPresignedUrlMutation.mutateAsync({
+                path: file.name,
+                contentType: file.type,
+                operation: 'put',
+              });
+              if (!presignedUrl) {
+                throw new Error('Failed to get presigned URL');
+              }
+
+              const uploadResponse = await fetch(presignedUrl, {
+                method: 'PUT',
+                body: file,
+                headers: { 'Content-Type': file.type },
+              });
+              if (!uploadResponse.ok) {
+                throw new Error('Upload failed');
+              }
+
               return {
-                uri: result.url,
-                mediaType: result.mediaType,
-                base64: undefined,
-                fileName: undefined,
+                fileName: media.fileName,
+                uri: media.uri,
+                mediaType: media.mediaType,
               };
             }) || []
           );
@@ -107,27 +121,9 @@ export default function Step3() {
         }) || []
       );
 
-      const uploadedImages = await Promise.all(
-        data.images?.map(async (image) => {
-          console.log('Uploading image:', image.fileName);
-          const result = await uploadMediaToProject.mutateAsync({
-            fileName: image.fileName!,
-            fileData: image.base64!,
-            mediaType: image.mediaType,
-          });
-          return {
-            uri: result.url,
-            mediaType: result.mediaType,
-            base64: undefined,
-            fileName: undefined,
-          };
-        }) || []
-      );
-
-      console.log('Setting data and navigating...');
       setData({
         step: 3,
-        data: { ...data, roomsDetails: uploadedRoomsDetails, images: uploadedImages },
+        data: { ...data, roomsDetails: uploadedRoomsDetails },
       });
       router.push('/(protected)/create-project/review');
     } catch (error) {

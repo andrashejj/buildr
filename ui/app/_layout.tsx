@@ -14,13 +14,11 @@ import { AppTRPCProvider } from '../utils/trpc';
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
 
-  console.log('logging process env', process.env);
-
   return (
     <ClerkProvider
       publishableKey={
         process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ??
-        'pk_test_Z3JhbmQtZ2Vja28tNS5jbGVyay5hY2NvdW50cy5kZXYk'
+        'pk_test_cmVzb2x2ZWQtdGljay03OC5jbGVyay5hY2NvdW50cy5kZXYk'
       }>
       <AppTRPCProvider>
         <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>

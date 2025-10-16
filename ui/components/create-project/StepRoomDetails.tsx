@@ -4,12 +4,12 @@ import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
 import { Control, FieldErrors, useController, useWatch } from 'react-hook-form';
 import { Image, ScrollView, TextInput, View } from 'react-native';
-import type { MediaAsset, RoomType } from './schema';
+import type { RoomType } from './schema';
 
 type RoomDetailsItem = {
   room: RoomType;
   expectations?: string;
-  images?: MediaAsset[];
+  images?: any[];
 };
 
 type Props = {
@@ -43,7 +43,7 @@ export default function StepRoomDetails({ control, room, errors }: Props) {
     return granted;
   }
 
-  async function pickMediaLocal(): Promise<MediaAsset[]> {
+  async function pickMediaLocal() {
     const granted = await requestMediaPermission();
     if (!granted) return [];
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -92,7 +92,7 @@ export default function StepRoomDetails({ control, room, errors }: Props) {
       if (files.length === 0) return;
 
       // Create simple assets using object URLs (works on web). Native platforms won't reach here.
-      const droppedAssets: MediaAsset[] = files.map((f) => {
+      const droppedAssets = files.map((f) => {
         const uri = typeof window !== 'undefined' && 'URL' in window ? URL.createObjectURL(f) : '';
         const fileType = f.type ?? '';
         const mediaType = fileType.startsWith('video') ? 'video' : 'image';
@@ -162,7 +162,7 @@ export default function StepRoomDetails({ control, room, errors }: Props) {
           onStartShouldSetResponder={() => true}
           onResponderRelease={handlePickRoomImages}
           className={`flex-row flex-wrap ${isDragActive ? 'border-2 border-primary/60 bg-primary/5 p-2' : ''}`}>
-          {(current?.images ?? []).map((asset: MediaAsset) =>
+          {(current?.images ?? []).map((asset) =>
             asset.mediaType === 'image' ? (
               <Image key={asset.uri} source={{ uri: asset.uri }} className="mb-2 mr-2 h-24 w-24" />
             ) : (

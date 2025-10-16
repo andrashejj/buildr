@@ -1,4 +1,3 @@
-import env from '@/config/env';
 import { createMedia, getMediaByProject } from '@/modules/media';
 import { createMessage, getMessagesForProject } from '@/modules/message';
 import { createOffer, getOffersForProject, updateOfferStatus } from '@/modules/offer';
@@ -8,7 +7,6 @@ import { Prisma } from '@/prisma/generated';
 import {
   EndDateTypeSchema,
   MediaCreateInputSchema,
-  MediaTypeSchema,
   MessageCreateInputSchema,
   OfferCreateInputSchema,
   OfferUpdateInputSchema,
@@ -17,61 +15,60 @@ import {
   RoomCreateInputSchema,
   RoomTypeSchema,
 } from '@/prisma/generated/zod';
-import { put } from '@vercel/blob';
+import { getPresignedUrl } from '@tigrisdata/storage';
 import { z } from 'zod';
 import { protectedProcedure, router } from '..';
+import env from '../../../config/env';
+
+export const CreateProjectInputSchema = z.object({
+  summary: z.string().min(1, 'Project summary is required'),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date().optional().nullable(),
+  endDateType: z
+    .lazy(() => EndDateTypeSchema)
+    .optional()
+    .nullable(),
+  budgetRange: z
+    .object({
+      min: z.number().min(0, 'Minimum budget must be at least 0'),
+      max: z.number().min(0, 'Maximum budget must be at least 0'),
+    })
+    .optional()
+    .refine((data) => !data || data.min <= data.max, {
+      message: 'Minimum budget cannot exceed maximum budget',
+    }),
+  type: z.lazy(() => ProjectTypeSchema),
+  rooms: z.array(RoomTypeSchema).optional(),
+  roomsDetails: z
+    .array(
+      z.object({
+        room: RoomTypeSchema,
+        expectations: z.string().optional(),
+        media: MediaCreateInputSchema.array(),
+      })
+    )
+    .optional(),
+});
 
 export const projectRouter = router({
   createProject: protectedProcedure
-    .input(
-      z.object({
-        name: z.string(),
-        startDate: z.coerce.date(),
-        endDate: z.coerce.date().optional().nullable(),
-        endDateType: z
-          .lazy(() => EndDateTypeSchema)
-          .optional()
-          .nullable(),
-        type: z.lazy(() => ProjectTypeSchema),
-        rooms: z.array(RoomTypeSchema).optional(),
-        roomsDetails: z
-          .array(
-            z.object({
-              room: RoomTypeSchema,
-              expectations: z.string().optional(),
-              images: z
-                .array(
-                  z.object({
-                    uri: z.string().min(1),
-                    mediaType: MediaTypeSchema,
-                  })
-                )
-                .optional(),
-            })
-          )
-          .optional(),
-        images: z
-          .array(
-            z.object({
-              uri: z.string().min(1),
-              mediaType: MediaTypeSchema,
-            })
-          )
-          .optional(),
-      })
-    )
+    .input(CreateProjectInputSchema)
     .mutation(async ({ ctx, input }) => {
-      const { roomsDetails, images, rooms, startDate, endDate, endDateType, ...rest } = input;
+      const { roomsDetails, rooms, startDate, endDate, endDateType, ...rest } = input;
       console.log('Creating project with data:', input);
 
       const data: Prisma.ProjectCreateInput = {
-        ...rest,
+        user: { connect: { id: ctx.user.id } },
+
         startDate: new Date(startDate),
         endDate: endDate ? new Date(endDate) : null,
         endDateType,
-        user: { connect: { id: ctx.user.id } },
+
+        budgetMin: input.budgetRange?.min,
+        budgetMax: input.budgetRange?.max,
+
         rooms: undefined,
-        media: undefined,
+        ...rest,
       };
 
       // Prefer detailed room objects when provided
@@ -81,15 +78,14 @@ export const projectRouter = router({
             type: roomDetail.room,
             name: roomDetail.room.toLowerCase().replace('_', ' '),
             expectations: roomDetail.expectations,
-            media: roomDetail.images
-              ? {
-                  create: roomDetail.images.map((image) => ({
-                    url: image.uri,
-                    type: image.mediaType,
-                    uploadedBy: { connect: { id: ctx.user.id } },
-                  })),
-                }
-              : undefined,
+            media: {
+              create: roomDetail.media.map((mediaItem) => ({
+                uri: mediaItem.uri,
+                fileName: mediaItem.fileName,
+                type: mediaItem.type,
+                uploadedBy: { connect: { id: ctx.user.id } },
+              })),
+            },
           })),
         };
       } else if (rooms && rooms.length > 0) {
@@ -97,17 +93,6 @@ export const projectRouter = router({
           create: rooms.map((roomType) => ({
             type: roomType,
             name: roomType.toLowerCase().replace('_', ' '),
-          })),
-        };
-      }
-
-      // Handle project-level media
-      if (images && images.length > 0) {
-        data.media = {
-          create: images.map((image) => ({
-            url: image.uri,
-            type: image.mediaType,
-            uploadedBy: { connect: { id: ctx.user.id } },
           })),
         };
       }
@@ -137,36 +122,56 @@ export const projectRouter = router({
     }),
 
   // Media
+  createPresignedUrl: protectedProcedure
+    .input(
+      z.object({ path: z.string(), contentType: z.string(), operation: z.enum(['put', 'get']) })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const uuidFileName = `${crypto.randomUUID()}-${input.path}`;
+        const result = await getPresignedUrl(
+          input.operation === 'put' ? uuidFileName : input.path,
+          {
+            operation: input.operation,
+            expiresIn: 3600, // 1 hour
+            config: {
+              bucket: env.TIGRIS.BUCKET_NAME,
+              accessKeyId: env.TIGRIS.AWS_ACCESS_KEY_ID,
+              secretAccessKey: env.TIGRIS.AWS_SECRET_ACCESS_KEY,
+            },
+          }
+        );
+
+        return { presignedUrl: result.data?.url };
+      } catch (error) {
+        console.error('Error generating presigned URL:', error);
+        throw new Error('Failed to generate presigned URL');
+      }
+    }),
+
+  createPresignedUrls: protectedProcedure
+    .input(
+      z.object({
+        files: z.array(z.object({ path: z.string(), contentType: z.string() })),
+        operation: z.enum(['put', 'get']),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const results = await Promise.all(
+        input.files.map((file) =>
+          getPresignedUrl(file.path, {
+            operation: input.operation,
+            expiresIn: 3600, // 1 hour
+          })
+        )
+      );
+      return results;
+    }),
+
   addMediaToProject: protectedProcedure
     .input(MediaCreateInputSchema)
     .mutation(async ({ input }) => {
       return await createMedia({ data: input });
-    }),
-
-  uploadMediaToProject: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.string().optional(),
-        roomId: z.string().optional(),
-        fileName: z.string(),
-        fileData: z.string(), // base64
-        mediaType: MediaTypeSchema,
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { fileName, fileData, mediaType } = input;
-
-      // Convert base64 to buffer
-      const buffer = Buffer.from(fileData, 'base64');
-
-      // Upload to Vercel Blob
-      const blob = await put(fileName, buffer, {
-        access: 'public',
-        token: env.BLOB_READ_WRITE_TOKEN,
-        addRandomSuffix: true,
-      });
-
-      return { url: blob.url, mediaType };
     }),
 
   getMediaByProject: protectedProcedure
@@ -179,6 +184,18 @@ export const projectRouter = router({
   sendMessage: protectedProcedure
     .input(MessageCreateInputSchema)
     .mutation(async ({ ctx, input }) => {
+      // Validate that message has either text or attachments, but not both
+      const hasText = input.body && input.body.trim().length > 0;
+      const hasAttachments = !!input.attachments;
+
+      if (!hasText && !hasAttachments) {
+        throw new Error('Message must contain either text or attachments');
+      }
+
+      if (hasText && hasAttachments) {
+        throw new Error('Message cannot have both text and attachments');
+      }
+
       return await createMessage({
         data: input,
       });

@@ -90,10 +90,9 @@ export const projectSchema = z.object({
         media: z
           .array(
             z.object({
-              uri: z.string().min(1),
+              fileName: z.string().min(1),
+              uri: z.string().min(1, 'Media URI is required'),
               mediaType: z.enum(MEDIA_TYPES),
-              base64: z.string().optional(),
-              fileName: z.string().optional(),
             })
           )
           .optional(),
@@ -110,20 +109,18 @@ export const projectSchema = z.object({
 
   endDateType: z.enum(['FLEXIBLE', 'EXACT']).optional(),
 
-  // General Images
-  images: z
-    .array(
-      z.object({
-        uri: z.string().min(1),
-        mediaType: z.enum(['IMAGE', 'VIDEO']),
-        base64: z.string().optional(),
-        fileName: z.string().optional(),
-      })
-    )
-    .optional(),
+  budgetRange: z
+    .object({
+      min: z.number().min(0, 'Minimum budget must be at least 0'),
+      max: z.number().min(0, 'Maximum budget must be at least 0'),
+    })
+    .optional()
+    .refine((data) => !data || data.min <= data.max, {
+      message: 'Minimum budget cannot exceed maximum budget',
+    }),
 
   // Step Review - Derived Info
-  name: z.string().min(1, 'Project name is required'),
+  summary: z.string().min(1, 'Project summary is required'),
 });
 
 export type FormValues = z.infer<typeof projectSchema>;
@@ -146,18 +143,5 @@ export const step3Schema = projectSchema.pick({
   startDate: true,
   endDate: true,
   endDateType: true,
-  images: true,
 });
 export type Step3Values = z.infer<typeof step3Schema>;
-
-export const step4Schema = projectSchema.pick({
-  startDate: true,
-  endDate: true,
-  endDateType: true,
-});
-export type Step4Values = z.infer<typeof step4Schema>;
-
-export const stepReviewSchema = projectSchema.pick({
-  name: true,
-});
-export type StepReviewValues = z.infer<typeof stepReviewSchema>;

@@ -1,9 +1,9 @@
+import { FormValues } from '@/components/create-project/schema';
 import { Text } from '@/components/ui/text';
 import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
 import { Control, FieldErrors, useController } from 'react-hook-form';
 import { Alert, Image, TouchableOpacity, View } from 'react-native';
-import { FormValues, MediaAsset } from './schema';
 
 type Props = {
   control: Control<any>;
@@ -18,13 +18,13 @@ async function requestMediaPermission(): Promise<boolean> {
   return granted;
 }
 
-function normalizeAssets(result: ImagePicker.ImagePickerResult): MediaAsset[] {
+function normalizeAssets(result: ImagePicker.ImagePickerResult) {
   if (result.canceled) return [];
   const assets = 'assets' in result ? result.assets : [];
   return assets.map((a) => ({ uri: a.uri, mediaType: a.type === 'video' ? 'video' : 'image' }));
 }
 
-async function pickMedia(): Promise<MediaAsset[]> {
+async function pickMedia() {
   const granted = await requestMediaPermission();
   if (!granted) return [];
   const result = await ImagePicker.launchImageLibraryAsync({
@@ -44,7 +44,7 @@ export default function StepSizePhotos({ control }: Props) {
     imagesField.onChange([...(imagesField.value ?? []), ...assets]);
   };
 
-  const selectedImages: MediaAsset[] = imagesField.value ?? [];
+  const selectedImages = imagesField.value ?? [];
 
   return (
     <>
@@ -57,7 +57,7 @@ export default function StepSizePhotos({ control }: Props) {
 
       <View className="mt-2 flex-row flex-wrap">
         {selectedImages.map((asset) =>
-          asset.mediaType === 'image' ? (
+          asset.mediaType === 'IMAGE' ? (
             <Image
               key={asset.uri}
               source={{ uri: asset.uri }}

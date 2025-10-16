@@ -2,21 +2,21 @@
 // We keep references back to a project, room or offer so media can be reused.
 model Media {
   id           String    @id @default(uuid())
+
+  // optional relations to associate media with a project, room
   projectId    String?
   project      Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   roomId       String?
   room         Room?     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  // optional relation to associate media with an offer (e.g. offer images)
   offerId      String?
   offer        Offer?    @relation(fields: [offerId], references: [id], onDelete: Cascade)
 
-  url          String
-  provider     String?   // e.g. "vercel/blob"
+  uri          String
+  fileName     String
   type         MediaType
-  mimeType     String?
-  size         Int?      // bytes
-  width        Int?
-  height       Int?
-  duration     Float?    // seconds, for video
+  
 
   // who uploaded this media (optional)
   uploadedById String?
