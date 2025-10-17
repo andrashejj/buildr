@@ -1,11 +1,17 @@
 import useDataStreamTranscriptions from '@/hooks/useDataStreamTranscriptions';
 import { useTRPC } from '@/utils/trpc';
-import { LiveKitRoom, useLocalParticipant, useParticipants } from '@livekit/components-react';
+import {
+  LiveKitRoom,
+  RoomAudioRenderer,
+  useIsSpeaking,
+  useLocalParticipant,
+} from '@livekit/components-react';
 import { useQuery } from '@tanstack/react-query';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Button, Text, View } from 'react-native';
-
-export default function AiPlaygroundWeb() {
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+export default function AiAdmin() {
+  const insets = useSafeAreaInsets();
   const trpc = useTRPC();
   const {
     data: connectionDetails,
@@ -15,16 +21,20 @@ export default function AiPlaygroundWeb() {
 
   if (error) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <Text className="text-base text-destructive">Error: {error.message}</Text>
+      <View className="flex-1" style={{ paddingTop: insets.top }}>
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-base text-destructive">Error: {error.message}</Text>
+        </View>
       </View>
     );
   }
 
-  if (isLoading || !connectionDetails?.participantToken || !connectionDetails?.serverUrl) {
+  if (isLoading || !connectionDetails?.participantToken || !connectionDetails.serverUrl) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <Text className="text-base text-foreground">Connecting to LiveKit...</Text>
+      <View className="flex-1" style={{ paddingTop: insets.top }}>
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-base text-foreground">Connecting to LiveKit...</Text>
+        </View>
       </View>
     );
   }
@@ -33,57 +43,67 @@ export default function AiPlaygroundWeb() {
     <LiveKitRoom
       serverUrl={connectionDetails.serverUrl}
       token={connectionDetails.participantToken}
-      connect>
+      connect={true}
+      options={{
+        adaptiveStream: false,
+      }}
+      audio={true}
+      video={false}>
+      {/* <ParticipantContext> */}
       <RoomView />
+      {/* </ParticipantContext> */}
+      <RoomAudioRenderer />
     </LiveKitRoom>
   );
 }
 
 const RoomView = () => {
-  const participants = useParticipants();
-  const { localParticipant } = useLocalParticipant() || {};
+  const { isMicrophoneEnabled, localParticipant } = useLocalParticipant();
+  useIsSpeaking(localParticipant);
 
-    const transcriptionState = useDataStreamTranscriptions()
+  const transcriptionState = useDataStreamTranscriptions();
 
-  console.log(
-    '🚀 ~ RoomView(web) ~ transcriptionState:',
-    transcriptionState.transcriptions
-  )
-
+  const sortedTranscriptions = useMemo(
+    () =>
+      [...transcriptionState.transcriptions].sort(
+        (a, b) => a.segment.firstReceivedTime - b.segment.firstReceivedTime
+      ),
+    [transcriptionState.transcriptions]
+  );
 
   const [isTogglingMic, setIsTogglingMic] = useState(false);
-  const [isMicrophoneEnabled, setIsMicrophoneEnabled] = useState(false);
-
-  // Log participants whenever they change (supports array or Map-like collections)
-  useEffect(() => {
-    const list: any[] = [];
-    if (!participants) return;
-    if (Array.isArray(participants)) {
-      list.push(...participants);
-    } else if (typeof participants === 'object' && (participants as any).values) {
-      list.push(...Array.from((participants as any).values()));
+  const onMicClick = useCallback(async () => {
+    if (!localParticipant) {
+      console.warn('No local participant available to toggle microphone');
+      return;
     }
 
-    console.log('LiveKit participants:', list.map((p) => ({ id: p.identity ?? p.sid ?? p.name })));
-  }, [participants]);
+    if (isTogglingMic) return;
+    setIsTogglingMic(true);
+    try {
+      await localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled);
+      console.log('Microphone toggled:', !isMicrophoneEnabled);
+    } catch (err: unknown) {
+      console.error('Failed to toggle microphone', err);
+      const msg =
+        (err as { message?: string })?.message ??
+        'Unable to change microphone state. Check permissions.';
+      Alert.alert('Microphone Error', msg);
+    } finally {
+      setIsTogglingMic(false);
+    }
+  }, [isMicrophoneEnabled, localParticipant, isTogglingMic]);
 
-  // When the participant becomes available, turn microphone on immediately.
   useEffect(() => {
     if (!localParticipant) return;
 
     let mounted = true;
     const enable = async () => {
       try {
-        // LocalParticipant from livekit should support setMicrophoneEnabled in the browser as well
-        if (typeof localParticipant.setMicrophoneEnabled === 'function') {
-          await localParticipant.setMicrophoneEnabled(true);
-        }
-        if (mounted) {
-          setIsMicrophoneEnabled(true);
-          console.log('Microphone enabled on join (web)');
-        }
+        await localParticipant.setMicrophoneEnabled(true);
+        if (mounted) console.log('Microphone enabled on join');
       } catch (err: unknown) {
-        console.error('Failed to enable microphone on join (web)', err);
+        console.error('Failed to enable microphone on join', err);
       }
     };
 
@@ -93,60 +113,77 @@ const RoomView = () => {
     };
   }, [localParticipant]);
 
-  const onMicClick = useCallback(async () => {
-    if (isTogglingMic) return;
-    setIsTogglingMic(true);
+  const scrollRef = useRef<ScrollView | null>(null);
+
+  useEffect(() => {
+    if (!scrollRef.current) return;
     try {
-      if (localParticipant && typeof localParticipant.setMicrophoneEnabled === 'function') {
-        await localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled);
-        setIsMicrophoneEnabled((v) => !v);
-      } else {
-        // Fallback to local state when localParticipant API isn't available
-        setIsMicrophoneEnabled((v) => !v);
-      }
-    } catch (err: unknown) {
-      const msg = (err as { message?: string })?.message ?? 'Unable to change microphone state.';
-      Alert.alert('Microphone Error', msg);
-    } finally {
-      setIsTogglingMic(false);
+      // react-native ScrollView has scrollToEnd
+      // @ts-ignore
+      scrollRef.current.scrollToEnd({ animated: true });
+    } catch {
+      // ignore if running on a platform without scrollToEnd
     }
-  }, [isTogglingMic, localParticipant, isMicrophoneEnabled]);
+  }, [sortedTranscriptions]);
 
   return (
-    <View className="flex-1 items-center justify-center px-4">
-      <Text className="mb-3 text-2xl font-bold text-foreground">Voice Assistant Connected (Web)</Text>
-
-      <Text className="mb-4 px-4 text-center text-base text-muted-foreground">
+    <View className="flex-1 items-stretch justify-start bg-background px-5 pt-3">
+      <Text className="mb-4 text-xl font-bold text-foreground">Voice Assistant Connected</Text>
+      <Text className="mb-8 px-5 text-center text-base text-muted-foreground">
         Start speaking to interact with the AI assistant
       </Text>
 
-      <View className="mb-4 w-full rounded-md bg-card p-4">
-        <Text className="mb-2 text-sm text-foreground">
+      <View className="mb-5 w-full rounded-lg bg-card p-4">
+        <Text className="mb-2 text-sm text-card-foreground">
           Microphone: {isMicrophoneEnabled ? '🎤 ON' : '🔇 OFF'}
         </Text>
-        <Text className="text-sm text-foreground">Participant ID: {localParticipant?.identity ?? 'Local'}</Text>
-        {/* Show a simple list of participant identities */}
-        {participants && (
-          <View className="mt-3">
-            <Text className="mb-1 text-sm font-semibold text-foreground">Room participants:</Text>
-            {Array.isArray(participants)
-              ? participants.map((p: any) => (
-                  <Text key={p.sid ?? p.identity ?? p.name} className="text-sm text-foreground">
-                    • {p.identity ?? p.name ?? p.sid}
-                  </Text>
-                ))
-              : Array.from((participants as any).values()).map((p: any) => (
-                  <Text key={p.sid ?? p.identity ?? p.name} className="text-sm text-foreground">
-                    • {p.identity ?? p.name ?? p.sid}
-                  </Text>
-                ))}
-          </View>
-        )}
+        <Text className="text-sm text-card-foreground">
+          Participant ID: {localParticipant.identity || 'Unknown'}
+        </Text>
       </View>
 
-      <View className="w-full">
-        <Button accessibilityLabel="toggle-microphone" disabled={isTogglingMic} title={isTogglingMic ? '...' : isMicrophoneEnabled ? 'Mute' : 'Unmute'} onPress={onMicClick} />
-      </View>
+      <TouchableOpacity
+        accessibilityLabel="toggle-microphone"
+        accessible
+        disabled={isTogglingMic}
+        className={`items-center rounded-lg px-6 py-3 ${isMicrophoneEnabled ? 'bg-primary' : 'bg-destructive'} ${isTogglingMic ? 'opacity-60' : ''}`}
+        onPress={onMicClick}>
+        <Text className="text-base font-bold text-primary-foreground">
+          {isTogglingMic ? '...' : isMicrophoneEnabled ? 'Mute' : 'Unmute'}
+        </Text>
+      </TouchableOpacity>
+
+      <ScrollView
+        ref={scrollRef}
+        className="mt-5 w-full flex-1 rounded-lg bg-background py-2"
+        contentContainerStyle={{
+          paddingHorizontal: 12,
+          paddingBottom: 12,
+          flexGrow: 1,
+          justifyContent: 'flex-end',
+        }}
+        keyboardShouldPersistTaps="handled">
+        {sortedTranscriptions.map((t) => {
+          const isAgent = !!t.identity && t.identity.startsWith('agent-');
+          const speaker = isAgent ? 'Assistant' : 'User';
+          const time = new Date(t.segment.firstReceivedTime).toLocaleTimeString();
+
+          return (
+            <View
+              key={t.segment.id}
+              className={`my-1.5 max-w-[90%] ${isAgent ? 'self-end' : 'self-start'}`}>
+              <Text className="mb-1 text-xs text-muted-foreground">
+                {speaker} · {time}
+              </Text>
+              <View className={`rounded-xl px-3 py-2 ${isAgent ? 'bg-secondary' : 'bg-accent'}`}>
+                <Text className="text-sm text-card-foreground">{t.segment.text || '...'}</Text>
+              </View>
+            </View>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 };
+
+// styles removed — using NativeWind/Tailwind CSS variables and className utilities instead

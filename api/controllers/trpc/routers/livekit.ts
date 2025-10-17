@@ -32,6 +32,7 @@ export const livekitRouter = router({
     if (agentName) {
       accessToken.roomConfig = new RoomConfiguration({
         agents: [{ agentName }],
+        metadata: JSON.stringify({ user_name: participantName }),
       });
     }
 
