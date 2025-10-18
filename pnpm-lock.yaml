@@ -147,6 +147,9 @@ importers:
 
   livekit:
     dependencies:
+      '@getzep/zep-cloud':
+        specifier: ^3.5.0
+        version: 3.5.0
       '@livekit/agents':
         specifier: ~1.0.11
         version: 1.0.11(@livekit/rtc-node@0.13.20)
@@ -1662,6 +1665,10 @@ packages:
 
   '@formkit/auto-animate@0.8.4':
     resolution: {integrity: sha512-DHHC01EJ1p70Q0z/ZFRBIY8NDnmfKccQoyoM84Tgb6omLMat6jivCdf272Y8k3nf4Lzdin/Y4R9q8uFtU0GbnA==}
+
+  '@getzep/zep-cloud@3.5.0':
+    resolution: {integrity: sha512-RblB05n8t+0xtQFltptyTELQh1ddC6KReeTK+5idCVxAloX98Qr5wcVdOSMAMouE6a+xbaNm/dRMRis2NzWedg==}
+    engines: {node: '>=18.0.0'}
 
   '@grpc/grpc-js@1.14.0':
     resolution: {integrity: sha512-N8Jx6PaYzcTRNzirReJCtADVoq4z7+1KQ4E70jTg/koQiMoUSN1kbNjPOqpPbhMFhfU1/l7ixspPl8dNY+FoUg==}
@@ -10608,6 +10615,10 @@ snapshots:
   '@floating-ui/utils@0.2.10': {}
 
   '@formkit/auto-animate@0.8.4': {}
+
+  '@getzep/zep-cloud@3.5.0':
+    dependencies:
+      zod: 3.25.76
 
   '@grpc/grpc-js@1.14.0':
     dependencies:

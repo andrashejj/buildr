@@ -10,7 +10,7 @@ import {
 } from '@livekit/components-react';
 import { useQuery } from '@tanstack/react-query';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function AiAdmin() {
   const insets = useSafeAreaInsets();
@@ -67,6 +67,51 @@ const RoomView = () => {
   const participants = useParticipants();
   const { agent } = useVoiceAssistant();
 
+  // Track whether we auto-muted the microphone so we don't unmute if user
+  // intentionally muted it.
+  const autoMutedRef = useRef<boolean>(false);
+  const prevUserMicStateRef = useRef<boolean | null>(null);
+
+  // Request microphone permission on mount but keep the mic muted initially.
+  useEffect(() => {
+    if (!localParticipant) return;
+    let mounted = true;
+
+    const requestPermissionAndMute = async () => {
+      try {
+        if (typeof navigator !== 'undefined' && (navigator as any).mediaDevices?.getUserMedia) {
+          try {
+            await (navigator as any).mediaDevices.getUserMedia({ audio: true });
+            console.log('Microphone permission granted');
+          } catch (e) {
+            console.warn('Microphone permission denied or unavailable', e);
+          }
+        }
+
+        // Ensure we start muted on join.
+        await localParticipant.setMicrophoneEnabled(false);
+        if (mounted) console.log('Microphone kept muted on join');
+      } catch (err: unknown) {
+        console.error('Failed to set microphone state on join', err);
+      }
+    };
+
+    requestPermissionAndMute();
+
+    return () => {
+      mounted = false;
+    };
+  }, [localParticipant]);
+
+  // Derive agent status: prefer an explicit status on the agent object, but
+  // fall back to inferring from transcriptions. Expected statuses: 'Ready' | 'Thinking'
+  const agentStatus = useMemo(() => {
+    if (agent && (agent as any).status) return (agent as any).status as string;
+    const list = transcriptionState?.transcriptions ?? [];
+    const thinking = list.some((t: any) => t.identity === agent?.identity && !t.segment?.final);
+    return thinking ? 'Thinking' : 'Ready';
+  }, [agent, transcriptionState?.transcriptions]);
+
   const sortedTranscriptions = useMemo(
     () =>
       [...transcriptionState.transcriptions].sort(
@@ -98,24 +143,42 @@ const RoomView = () => {
     }
   }, [isMicrophoneEnabled, localParticipant, isTogglingMic]);
 
+  // When the agent is 'Thinking', auto-mute the local mic; when it becomes 'Ready'
+  // restore the mic only if we auto-muted earlier. This respects user's manual mute state.
   useEffect(() => {
     if (!localParticipant) return;
 
-    let mounted = true;
-    const enable = async () => {
+    const apply = async () => {
       try {
-        await localParticipant.setMicrophoneEnabled(true);
-        if (mounted) console.log('Microphone enabled on join');
+        if (agentStatus === 'Thinking') {
+          if (isMicrophoneEnabled) {
+            prevUserMicStateRef.current = isMicrophoneEnabled;
+            autoMutedRef.current = true;
+            await localParticipant.setMicrophoneEnabled(false);
+            console.log('Auto-muted microphone while agent is Thinking');
+          } else {
+            autoMutedRef.current = false;
+            prevUserMicStateRef.current = false;
+          }
+        } else {
+          // agentStatus !== 'Thinking'
+          if (autoMutedRef.current) {
+            const shouldEnable = prevUserMicStateRef.current ?? true;
+            if (shouldEnable && !isMicrophoneEnabled) {
+              await localParticipant.setMicrophoneEnabled(true);
+              console.log('Restored microphone after agent finished');
+            }
+            autoMutedRef.current = false;
+            prevUserMicStateRef.current = null;
+          }
+        }
       } catch (err: unknown) {
-        console.error('Failed to enable microphone on join', err);
+        console.error('Error toggling microphone for agent status', err);
       }
     };
 
-    enable();
-    return () => {
-      mounted = false;
-    };
-  }, [localParticipant]);
+    apply();
+  }, [agentStatus, localParticipant, isMicrophoneEnabled]);
 
   const scrollRef = useRef<any>(null);
 
@@ -147,6 +210,15 @@ const RoomView = () => {
       // ignore
     }
   }, [sortedTranscriptions]);
+
+  // Platform-aware scroll style: on web use viewport-height units, on native
+  // use a numeric maxHeight so types align with React Native's expectations.
+  const scrollStyle = useMemo(() => {
+    if (Platform.OS === 'web') {
+      return { maxHeight: '60vh', overflow: 'auto' } as any;
+    }
+    return { maxHeight: 400 };
+  }, []);
 
   return (
     <View className="flex-1 items-stretch justify-start bg-background px-5 pt-3">
@@ -187,10 +259,7 @@ const RoomView = () => {
 
           {/* Agent thinking indicator: infer from non-final agent transcription (no casting or non-existent flags) */}
           <Text className="mt-2 text-sm text-card-foreground">
-            Agent status:{' '}
-            {sortedTranscriptions.some((t) => t.identity === agent?.identity && !t.segment.final)
-              ? '💭 Thinking...'
-              : 'Ready'}
+            Agent status: {agentStatus === 'Thinking' ? '💭 Thinking...' : agentStatus}
           </Text>
         </View>
       </View>
@@ -208,11 +277,14 @@ const RoomView = () => {
 
       <ScrollView
         ref={scrollRef}
-        className="mt-5 w-full flex-1 rounded-lg bg-background py-2"
+        className="mt-5 w-full rounded-lg bg-background py-2"
+        // Constrain the height so the list becomes scrollable on web and native.
+        style={scrollStyle}
+        // Allow nested scrolling in mobile/Android where supported
+        nestedScrollEnabled={true}
         contentContainerStyle={{
           paddingHorizontal: 12,
           paddingBottom: 12,
-          flexGrow: 1,
         }}
         keyboardShouldPersistTaps="handled">
         {sortedTranscriptions.map((t) => {
