@@ -1,4 +1,3 @@
-import { ZepClient } from '@getzep/zep-cloud';
 import {
   type JobContext,
   type JobProcess,
@@ -11,17 +10,11 @@ import {
 } from '@livekit/agents';
 import * as livekit from '@livekit/agents-plugin-livekit';
 import * as silero from '@livekit/agents-plugin-silero';
-import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
 dotenv.config({ path: '.env.local' });
-
-const client = new ZepClient({
-  apiKey:
-    'z_1dWlkIjoiNDUxZGM5ODYtMjM0Ni00MWQxLTgwYmYtODgxZGMzZjRmMTVkIn0.02OMdbCEyVB00300Uw-1pPl5Yfj01ySZP42q8thiabDRLca_gGawJN5EX9CW7pOdnGZJEIfvivpHhkG3c4JzfQ',
-});
 
 const MetadataSchema = z.object({
   user_name: z.string(),
@@ -109,7 +102,7 @@ export default defineAgent({
       }),
       tts: new inference.TTS({
         model: 'cartesia/sonic-2',
-        voice: 'a167e0f3-df7e-4d52-a9c3-f949145efdab',
+        voice: '9626c31c-bec5-4cca-baa8-f8ba9e84c8bc',
         language: 'en',
       }),
       turnDetection: new livekit.turnDetector.MultilingualModel(),
@@ -148,95 +141,7 @@ export default defineAgent({
       content: `The user's friendly name is ${friendlyName}`,
     });
 
-    // --- ZEP integration: create/update user, thread, add initial messages, fetch context ---
-    (async () => {
-      let zepUserId: string | undefined = userId;
-      let zepThreadId: string | undefined;
-      try {
-        // Ensure we have a Zep user id
-        if (!zepUserId) {
-          zepUserId = `user_${randomUUID()}`;
-        }
-
-        const [firstName, ...rest] = (userName || '').split(' ').filter(Boolean);
-        const lastName = rest.join(' ');
-
-        try {
-          await client.user.add({
-            userId: zepUserId,
-            firstName: firstName || 'User',
-            lastName: lastName || undefined,
-          });
-          console.log(`✅ Zep user created: ${zepUserId}`);
-        } catch (err: any) {
-          console.warn('⚠️ Zep user.add failed (might already exist):', err?.message ?? err);
-        }
-
-        // Create a thread for this session/conversation
-        zepThreadId = randomUUID();
-        try {
-          await client.thread.create({ threadId: zepThreadId, userId: zepUserId });
-          console.log(`✅ Zep thread created: ${zepThreadId}`);
-        } catch (err: any) {
-          console.warn('⚠️ Zep thread.create failed:', err?.message ?? err);
-        }
-
-        // Add an initial pair of messages to help populate the graph
-        const messages: Array<{
-          name?: string;
-          content: string;
-          role: 'user' | 'assistant';
-        }> = [
-          {
-            name: userName || zepUserId,
-            content: `${userName || zepUserId} started a conversation with the buildr voice agent.`,
-            role: 'user',
-          },
-          {
-            name: 'buildr-voice-agent',
-            content:
-              'I am a concise, professional voice AI consultant for building and renovation projects. I will ask one focused question at a time.',
-            role: 'assistant',
-          },
-        ];
-
-        try {
-          await client.thread.addMessages(zepThreadId, { messages });
-          console.log(`✅ Added initial messages to Zep thread ${zepThreadId}`);
-        } catch (err: any) {
-          console.warn('⚠️ Zep thread.addMessages failed:', err?.message ?? err);
-        }
-
-        // Retrieve the context block for the thread (summarized by default)
-        try {
-          const memory = await client.thread.getUserContext(zepThreadId!);
-          let contextBlock: string | undefined;
-          if (memory && typeof memory === 'object' && 'context' in memory) {
-            try {
-              // Access dynamically and ensure it's a string before using it
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore - runtime check below ensures safety
-              const maybe = memory.context;
-              if (typeof maybe === 'string') contextBlock = maybe;
-            } catch (err) {
-              // ignore shape errors
-            }
-          }
-          if (contextBlock) {
-            // Prepend Zep context as a system message
-            initialCtx.addMessage({ role: 'system', content: `ZEP_CONTEXT: ${contextBlock}` });
-            console.log('✅ Injected Zep context into initial LLM context');
-          }
-        } catch (err: any) {
-          console.warn('⚠️ Zep thread.getUserContext failed:', err?.message ?? err);
-        }
-
-        // Persist ids for later use in the JobProcess
-        ctx.proc.userData.zep = { userId: zepUserId, threadId: zepThreadId };
-      } catch (err: any) {
-        console.warn('⚠️ Zep integration error:', err?.message ?? err);
-      }
-    })();
+    // (Zep integration removed)
 
     await session.start({
       room: ctx.room,

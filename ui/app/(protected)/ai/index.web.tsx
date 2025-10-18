@@ -9,8 +9,8 @@ import {
   useVoiceAssistant,
 } from '@livekit/components-react';
 import { useQuery } from '@tanstack/react-query';
-import React, { useEffect, useMemo, useRef } from 'react';
-import { Platform, ScrollView, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function AiAdmin() {
   const insets = useSafeAreaInsets();
@@ -60,25 +60,12 @@ export default function AiAdmin() {
 }
 
 const RoomView = () => {
-  const insets = useSafeAreaInsets();
-  const { localParticipant } = useLocalParticipant();
+  const { isMicrophoneEnabled, localParticipant } = useLocalParticipant();
   useIsSpeaking(localParticipant);
 
   const transcriptionState = useDataStreamTranscriptions();
   const participants = useParticipants();
   const { agent } = useVoiceAssistant();
-
-  // Track whether we auto-muted the microphone so we don't unmute if user
-  // (Microphone auto-mute behavior removed)
-
-  // Derive agent status: prefer an explicit status on the agent object, but
-  // fall back to inferring from transcriptions. Expected statuses: 'Ready' | 'Thinking'
-  const agentStatus = useMemo(() => {
-    if (agent && (agent as any).status) return (agent as any).status as string;
-    const list = transcriptionState?.transcriptions ?? [];
-    const thinking = list.some((t: any) => t.identity === agent?.identity && !t.segment?.final);
-    return thinking ? 'Thinking' : 'Ready';
-  }, [agent, transcriptionState?.transcriptions]);
 
   const sortedTranscriptions = useMemo(
     () =>
@@ -88,7 +75,47 @@ const RoomView = () => {
     [transcriptionState.transcriptions]
   );
 
-  // (Agent-driven mic toggling removed)
+  const [isTogglingMic, setIsTogglingMic] = useState(false);
+  const onMicClick = useCallback(async () => {
+    if (!localParticipant) {
+      console.warn('No local participant available to toggle microphone');
+      return;
+    }
+
+    if (isTogglingMic) return;
+    setIsTogglingMic(true);
+    try {
+      await localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled);
+      console.log('Microphone toggled:', !isMicrophoneEnabled);
+    } catch (err: unknown) {
+      console.error('Failed to toggle microphone', err);
+      const msg =
+        (err as { message?: string })?.message ??
+        'Unable to change microphone state. Check permissions.';
+      Alert.alert('Microphone Error', msg);
+    } finally {
+      setIsTogglingMic(false);
+    }
+  }, [isMicrophoneEnabled, localParticipant, isTogglingMic]);
+
+  useEffect(() => {
+    if (!localParticipant) return;
+
+    let mounted = true;
+    const enable = async () => {
+      try {
+        await localParticipant.setMicrophoneEnabled(true);
+        if (mounted) console.log('Microphone enabled on join');
+      } catch (err: unknown) {
+        console.error('Failed to enable microphone on join', err);
+      }
+    };
+
+    enable();
+    return () => {
+      mounted = false;
+    };
+  }, [localParticipant]);
 
   const scrollRef = useRef<any>(null);
 
@@ -121,44 +148,17 @@ const RoomView = () => {
     }
   }, [sortedTranscriptions]);
 
-  // Platform-aware scroll style: on web use viewport-height units, on native
-  // use a numeric maxHeight so types align with React Native's expectations.
-  const scrollStyle = useMemo(() => {
-    if (Platform.OS === 'web') {
-      // Subtract the top safe-area inset so the content area doesn't get hidden
-      // under iOS Safari's address bar when it shrinks the viewport.
-      return { maxHeight: 'calc(60vh - env(safe-area-inset-top, 12px))', overflow: 'auto' } as any;
-    }
-    return { maxHeight: 400 };
-  }, []);
-
-  // Compute content bottom padding that respects iOS safe area on web and native.
-  // On web use CSS env(safe-area-inset-bottom) with a fallback, on native use the insets value.
-  const contentPaddingBottom =
-    Platform.OS === 'web' ? `calc(env(safe-area-inset-bottom, 0px) + 12px)` : insets.bottom + 12;
-
   return (
-    <View
-      className="flex-1 items-stretch justify-start bg-background px-5 pt-3"
-      // Ensure the overall layout also respects the top and bottom safe areas so
-      // buttons and content aren't hidden by the iOS address bar / home indicator.
-      // On web we use CSS env() variables; on native we use the safe area insets.
-      // Cast to `any` so TypeScript accepts the CSS env() string on web while allowing
-      // a numeric value on native platforms.
-      style={
-        {
-          paddingTop: Platform.OS === 'web' ? 'env(safe-area-inset-top, 12px)' : insets.top + 12,
-          paddingBottom:
-            Platform.OS === 'web' ? 'env(safe-area-inset-bottom, 12px)' : insets.bottom + 12,
-        } as any
-      }>
+    <View className="flex-1 items-stretch justify-start bg-background px-5 pt-3">
       <Text className="mb-4 text-xl font-bold text-foreground">Voice Assistant Connected</Text>
       <Text className="mb-8 px-5 text-center text-base text-muted-foreground">
         Start speaking to interact with the AI assistant
       </Text>
 
       <View className="mb-5 w-full rounded-lg bg-card p-4">
-        {/* Microphone status removed */}
+        <Text className="mb-2 text-sm text-card-foreground">
+          Microphone: {isMicrophoneEnabled ? '🎤 ON' : '🔇 OFF'}
+        </Text>
 
         {/* Participant list */}
         <View className="mt-2">
@@ -187,25 +187,32 @@ const RoomView = () => {
 
           {/* Agent thinking indicator: infer from non-final agent transcription (no casting or non-existent flags) */}
           <Text className="mt-2 text-sm text-card-foreground">
-            Agent status: {agentStatus === 'Thinking' ? '💭 Thinking...' : agentStatus}
+            Agent status:{' '}
+            {sortedTranscriptions.some((t) => t.identity === agent?.identity && !t.segment.final)
+              ? '💭 Thinking...'
+              : 'Ready'}
           </Text>
         </View>
       </View>
 
-      {/* Microphone toggle removed */}
+      <TouchableOpacity
+        accessibilityLabel="toggle-microphone"
+        accessible
+        disabled={isTogglingMic}
+        className={`items-center rounded-lg px-6 py-3 ${isMicrophoneEnabled ? 'bg-primary' : 'bg-destructive'} ${isTogglingMic ? 'opacity-60' : ''}`}
+        onPress={onMicClick}>
+        <Text className="text-base font-bold text-primary-foreground">
+          {isTogglingMic ? '...' : isMicrophoneEnabled ? 'Mute' : 'Unmute'}
+        </Text>
+      </TouchableOpacity>
 
       <ScrollView
         ref={scrollRef}
-        className="mt-5 w-full rounded-lg bg-background py-2"
-        // Constrain the height so the list becomes scrollable on web and native.
-        style={scrollStyle}
-        // Allow nested scrolling in mobile/Android where supported
-        nestedScrollEnabled={true}
+        className="mt-5 w-full flex-1 rounded-lg bg-background py-2"
         contentContainerStyle={{
           paddingHorizontal: 12,
-          // Use the computed content padding which includes the safe-area inset on web/native
-          // Cast to `any` for the same reason as above.
-          paddingBottom: contentPaddingBottom as any,
+          paddingBottom: 12,
+          flexGrow: 1,
         }}
         keyboardShouldPersistTaps="handled">
         {sortedTranscriptions.map((t) => {
