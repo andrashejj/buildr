@@ -109,7 +109,7 @@ export default defineAgent({
       }),
       tts: new inference.TTS({
         model: 'cartesia/sonic-2',
-        voice: '9626c31c-bec5-4cca-baa8-f8ba9e84c8bc',
+        voice: 'a167e0f3-df7e-4d52-a9c3-f949145efdab',
         language: 'en',
       }),
       turnDetection: new livekit.turnDetector.MultilingualModel(),

@@ -60,6 +60,7 @@ export default function AiAdmin() {
 }
 
 const RoomView = () => {
+  const insets = useSafeAreaInsets();
   const { isMicrophoneEnabled, localParticipant } = useLocalParticipant();
   useIsSpeaking(localParticipant);
 
@@ -68,9 +69,8 @@ const RoomView = () => {
   const { agent } = useVoiceAssistant();
 
   // Track whether we auto-muted the microphone so we don't unmute if user
-  // intentionally muted it.
-  const autoMutedRef = useRef<boolean>(false);
-  const prevUserMicStateRef = useRef<boolean | null>(null);
+  // We will use a single source of truth for microphone enabled state.
+  // Start muted on join and allow agent status to drive mute/unmute.
 
   // Request microphone permission on mount but keep the mic muted initially.
   useEffect(() => {
@@ -143,8 +143,10 @@ const RoomView = () => {
     }
   }, [isMicrophoneEnabled, localParticipant, isTogglingMic]);
 
-  // When the agent is 'Thinking', auto-mute the local mic; when it becomes 'Ready'
-  // restore the mic only if we auto-muted earlier. This respects user's manual mute state.
+  // When the agent is 'Thinking', ensure the mic is muted. When the agent is
+  // 'Ready', unmute. We drive the microphone entirely from agentStatus so
+  // there's a single source of truth (user toggles still call setMicrophoneEnabled
+  // but will be overridden by agent status changes).
   useEffect(() => {
     if (!localParticipant) return;
 
@@ -152,24 +154,13 @@ const RoomView = () => {
       try {
         if (agentStatus === 'Thinking') {
           if (isMicrophoneEnabled) {
-            prevUserMicStateRef.current = isMicrophoneEnabled;
-            autoMutedRef.current = true;
             await localParticipant.setMicrophoneEnabled(false);
             console.log('Auto-muted microphone while agent is Thinking');
-          } else {
-            autoMutedRef.current = false;
-            prevUserMicStateRef.current = false;
           }
-        } else {
-          // agentStatus !== 'Thinking'
-          if (autoMutedRef.current) {
-            const shouldEnable = prevUserMicStateRef.current ?? true;
-            if (shouldEnable && !isMicrophoneEnabled) {
-              await localParticipant.setMicrophoneEnabled(true);
-              console.log('Restored microphone after agent finished');
-            }
-            autoMutedRef.current = false;
-            prevUserMicStateRef.current = null;
+        } else if (agentStatus === 'Ready') {
+          if (!isMicrophoneEnabled) {
+            await localParticipant.setMicrophoneEnabled(true);
+            console.log('Unmuted microphone because agent is Ready');
           }
         }
       } catch (err: unknown) {
@@ -215,13 +206,33 @@ const RoomView = () => {
   // use a numeric maxHeight so types align with React Native's expectations.
   const scrollStyle = useMemo(() => {
     if (Platform.OS === 'web') {
-      return { maxHeight: '60vh', overflow: 'auto' } as any;
+      // Subtract the top safe-area inset so the content area doesn't get hidden
+      // under iOS Safari's address bar when it shrinks the viewport.
+      return { maxHeight: 'calc(60vh - env(safe-area-inset-top, 12px))', overflow: 'auto' } as any;
     }
     return { maxHeight: 400 };
   }, []);
 
+  // Compute content bottom padding that respects iOS safe area on web and native.
+  // On web use CSS env(safe-area-inset-bottom) with a fallback, on native use the insets value.
+  const contentPaddingBottom =
+    Platform.OS === 'web' ? `calc(env(safe-area-inset-bottom, 0px) + 12px)` : insets.bottom + 12;
+
   return (
-    <View className="flex-1 items-stretch justify-start bg-background px-5 pt-3">
+    <View
+      className="flex-1 items-stretch justify-start bg-background px-5 pt-3"
+      // Ensure the overall layout also respects the top and bottom safe areas so
+      // buttons and content aren't hidden by the iOS address bar / home indicator.
+      // On web we use CSS env() variables; on native we use the safe area insets.
+      // Cast to `any` so TypeScript accepts the CSS env() string on web while allowing
+      // a numeric value on native platforms.
+      style={
+        {
+          paddingTop: Platform.OS === 'web' ? 'env(safe-area-inset-top, 12px)' : insets.top + 12,
+          paddingBottom:
+            Platform.OS === 'web' ? 'env(safe-area-inset-bottom, 12px)' : insets.bottom + 12,
+        } as any
+      }>
       <Text className="mb-4 text-xl font-bold text-foreground">Voice Assistant Connected</Text>
       <Text className="mb-8 px-5 text-center text-base text-muted-foreground">
         Start speaking to interact with the AI assistant
@@ -284,7 +295,9 @@ const RoomView = () => {
         nestedScrollEnabled={true}
         contentContainerStyle={{
           paddingHorizontal: 12,
-          paddingBottom: 12,
+          // Use the computed content padding which includes the safe-area inset on web/native
+          // Cast to `any` for the same reason as above.
+          paddingBottom: contentPaddingBottom as any,
         }}
         keyboardShouldPersistTaps="handled">
         {sortedTranscriptions.map((t) => {
