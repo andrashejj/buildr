@@ -5,6 +5,8 @@ import {
   RoomAudioRenderer,
   useIsSpeaking,
   useLocalParticipant,
+  useParticipants,
+  useVoiceAssistant,
 } from '@livekit/components-react';
 import { useQuery } from '@tanstack/react-query';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -62,6 +64,8 @@ const RoomView = () => {
   useIsSpeaking(localParticipant);
 
   const transcriptionState = useDataStreamTranscriptions();
+  const participants = useParticipants();
+  const { agent } = useVoiceAssistant();
 
   const sortedTranscriptions = useMemo(
     () =>
@@ -113,16 +117,34 @@ const RoomView = () => {
     };
   }, [localParticipant]);
 
-  const scrollRef = useRef<ScrollView | null>(null);
+  const scrollRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!scrollRef.current) return;
+    const el = scrollRef.current;
+    if (!el) return;
+
     try {
       // react-native ScrollView has scrollToEnd
-      // @ts-ignore
-      scrollRef.current.scrollToEnd({ animated: true });
+      if (typeof el.scrollToEnd === 'function') {
+        el.scrollToEnd({ animated: true });
+        return;
+      }
+
+      // react-native-web / DOM element fallback
+      // If the ref points to an HTMLElement, scroll to its scrollHeight
+      const node = el as unknown as HTMLElement;
+      if (node && typeof node.scrollTo === 'function') {
+        node.scrollTo({ top: node.scrollHeight, behavior: 'smooth' });
+        return;
+      }
+
+      // final fallback: set scrollTop
+      if (node && 'scrollHeight' in node) {
+        // @ts-ignore
+        node.scrollTop = node.scrollHeight;
+      }
     } catch {
-      // ignore if running on a platform without scrollToEnd
+      // ignore
     }
   }, [sortedTranscriptions]);
 
@@ -137,9 +159,40 @@ const RoomView = () => {
         <Text className="mb-2 text-sm text-card-foreground">
           Microphone: {isMicrophoneEnabled ? '🎤 ON' : '🔇 OFF'}
         </Text>
-        <Text className="text-sm text-card-foreground">
-          Participant ID: {localParticipant.identity || 'Unknown'}
-        </Text>
+
+        {/* Participant list */}
+        <View className="mt-2">
+          <Text className="mb-1 text-sm font-semibold text-card-foreground">Participants</Text>
+          <Text className="text-sm text-card-foreground">
+            You: {localParticipant?.identity || 'Unknown'}
+          </Text>
+          <Text className="text-sm text-card-foreground">
+            Assistant: {agent?.identity || 'None'}
+          </Text>
+
+          {participants && participants.length > 0 && (
+            <View className="mt-2">
+              {participants
+                .filter(
+                  (p: any) =>
+                    p.identity !== localParticipant?.identity && p.identity !== agent?.identity
+                )
+                .map((p: any) => (
+                  <Text key={p.identity} className="text-sm text-card-foreground">
+                    • {p.identity}
+                  </Text>
+                ))}
+            </View>
+          )}
+
+          {/* Agent thinking indicator: infer from non-final agent transcription (no casting or non-existent flags) */}
+          <Text className="mt-2 text-sm text-card-foreground">
+            Agent status:{' '}
+            {sortedTranscriptions.some((t) => t.identity === agent?.identity && !t.segment.final)
+              ? '💭 Thinking...'
+              : 'Ready'}
+          </Text>
+        </View>
       </View>
 
       <TouchableOpacity
@@ -160,7 +213,6 @@ const RoomView = () => {
           paddingHorizontal: 12,
           paddingBottom: 12,
           flexGrow: 1,
-          justifyContent: 'flex-end',
         }}
         keyboardShouldPersistTaps="handled">
         {sortedTranscriptions.map((t) => {
@@ -185,5 +237,3 @@ const RoomView = () => {
     </View>
   );
 };
-
-// styles removed — using NativeWind/Tailwind CSS variables and className utilities instead
