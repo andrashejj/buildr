@@ -102,6 +102,8 @@ export default defineAgent({
         language: 'en',
       }),
       turnDetection: new livekit.turnDetector.MultilingualModel(),
+      voiceOptions: {
+        allowInterruptions
     });
 
     const initialCtx = llm.ChatContext.empty();
