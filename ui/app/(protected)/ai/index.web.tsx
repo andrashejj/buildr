@@ -9,8 +9,8 @@ import {
   useVoiceAssistant,
 } from '@livekit/components-react';
 import { useQuery } from '@tanstack/react-query';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { Platform, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function AiAdmin() {
   const insets = useSafeAreaInsets();
@@ -61,7 +61,7 @@ export default function AiAdmin() {
 
 const RoomView = () => {
   const insets = useSafeAreaInsets();
-  const { isMicrophoneEnabled, localParticipant } = useLocalParticipant();
+  const { localParticipant } = useLocalParticipant();
   useIsSpeaking(localParticipant);
 
   const transcriptionState = useDataStreamTranscriptions();
@@ -69,39 +69,7 @@ const RoomView = () => {
   const { agent } = useVoiceAssistant();
 
   // Track whether we auto-muted the microphone so we don't unmute if user
-  // We will use a single source of truth for microphone enabled state.
-  // Start muted on join and allow agent status to drive mute/unmute.
-
-  // Request microphone permission on mount but keep the mic muted initially.
-  useEffect(() => {
-    if (!localParticipant) return;
-    let mounted = true;
-
-    const requestPermissionAndMute = async () => {
-      try {
-        if (typeof navigator !== 'undefined' && (navigator as any).mediaDevices?.getUserMedia) {
-          try {
-            await (navigator as any).mediaDevices.getUserMedia({ audio: true });
-            console.log('Microphone permission granted');
-          } catch (e) {
-            console.warn('Microphone permission denied or unavailable', e);
-          }
-        }
-
-        // Ensure we start muted on join.
-        await localParticipant.setMicrophoneEnabled(false);
-        if (mounted) console.log('Microphone kept muted on join');
-      } catch (err: unknown) {
-        console.error('Failed to set microphone state on join', err);
-      }
-    };
-
-    requestPermissionAndMute();
-
-    return () => {
-      mounted = false;
-    };
-  }, [localParticipant]);
+  // (Microphone auto-mute behavior removed)
 
   // Derive agent status: prefer an explicit status on the agent object, but
   // fall back to inferring from transcriptions. Expected statuses: 'Ready' | 'Thinking'
@@ -120,56 +88,7 @@ const RoomView = () => {
     [transcriptionState.transcriptions]
   );
 
-  const [isTogglingMic, setIsTogglingMic] = useState(false);
-  const onMicClick = useCallback(async () => {
-    if (!localParticipant) {
-      console.warn('No local participant available to toggle microphone');
-      return;
-    }
-
-    if (isTogglingMic) return;
-    setIsTogglingMic(true);
-    try {
-      await localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled);
-      console.log('Microphone toggled:', !isMicrophoneEnabled);
-    } catch (err: unknown) {
-      console.error('Failed to toggle microphone', err);
-      const msg =
-        (err as { message?: string })?.message ??
-        'Unable to change microphone state. Check permissions.';
-      Alert.alert('Microphone Error', msg);
-    } finally {
-      setIsTogglingMic(false);
-    }
-  }, [isMicrophoneEnabled, localParticipant, isTogglingMic]);
-
-  // When the agent is 'Thinking', ensure the mic is muted. When the agent is
-  // 'Ready', unmute. We drive the microphone entirely from agentStatus so
-  // there's a single source of truth (user toggles still call setMicrophoneEnabled
-  // but will be overridden by agent status changes).
-  useEffect(() => {
-    if (!localParticipant) return;
-
-    const apply = async () => {
-      try {
-        if (agentStatus === 'Thinking') {
-          if (isMicrophoneEnabled) {
-            await localParticipant.setMicrophoneEnabled(false);
-            console.log('Auto-muted microphone while agent is Thinking');
-          }
-        } else if (agentStatus === 'Ready') {
-          if (!isMicrophoneEnabled) {
-            await localParticipant.setMicrophoneEnabled(true);
-            console.log('Unmuted microphone because agent is Ready');
-          }
-        }
-      } catch (err: unknown) {
-        console.error('Error toggling microphone for agent status', err);
-      }
-    };
-
-    apply();
-  }, [agentStatus, localParticipant, isMicrophoneEnabled]);
+  // (Agent-driven mic toggling removed)
 
   const scrollRef = useRef<any>(null);
 
@@ -239,9 +158,7 @@ const RoomView = () => {
       </Text>
 
       <View className="mb-5 w-full rounded-lg bg-card p-4">
-        <Text className="mb-2 text-sm text-card-foreground">
-          Microphone: {isMicrophoneEnabled ? '🎤 ON' : '🔇 OFF'}
-        </Text>
+        {/* Microphone status removed */}
 
         {/* Participant list */}
         <View className="mt-2">
@@ -275,16 +192,7 @@ const RoomView = () => {
         </View>
       </View>
 
-      <TouchableOpacity
-        accessibilityLabel="toggle-microphone"
-        accessible
-        disabled={isTogglingMic}
-        className={`items-center rounded-lg px-6 py-3 ${isMicrophoneEnabled ? 'bg-primary' : 'bg-destructive'} ${isTogglingMic ? 'opacity-60' : ''}`}
-        onPress={onMicClick}>
-        <Text className="text-base font-bold text-primary-foreground">
-          {isTogglingMic ? '...' : isMicrophoneEnabled ? 'Mute' : 'Unmute'}
-        </Text>
-      </TouchableOpacity>
+      {/* Microphone toggle removed */}
 
       <ScrollView
         ref={scrollRef}
